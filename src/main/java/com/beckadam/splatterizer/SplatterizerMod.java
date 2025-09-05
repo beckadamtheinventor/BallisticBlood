@@ -1,5 +1,9 @@
 package com.beckadam.splatterizer;
 
+import com.beckadam.splatterizer.handlers.LivingEntityHurtHandler;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.Instance;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -27,6 +31,7 @@ public class SplatterizerMod {
 	@Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         ModRegistry.init();
+        LivingEntityHurtHandler.init(MinecraftForge.EVENT_BUS);
     }
 
     @Mod.EventHandler

@@ -8,7 +8,7 @@ import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 public class SplatterizerModPlugin implements IFMLLoadingPlugin {
 
 	public SplatterizerModPlugin() {
-		MixinBootstrap.init();
+		//MixinBootstrap.init();
 		//False for Vanilla/Coremod mixins, true for regular mod mixins
 		//FermiumRegistryAPI.enqueueMixin(false, "mixins.splatterizer.vanilla.json");
 		//FermiumRegistryAPI.enqueueMixin(true, "mixins.splatterizer.jei.json", () -> Loader.isModLoaded("jei"));

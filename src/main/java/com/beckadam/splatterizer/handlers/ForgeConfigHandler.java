@@ -21,12 +21,10 @@ public class ForgeConfigHandler {
 
 	@MixinConfig(name = SplatterizerMod.MODID) //Needed on config classes that contain MixinToggles for those mixins to be added
 	public static class ServerConfig {
-
-		@Config.Comment("Enable Entity Hit Mixin")
-		@Config.Name("Enable Entity Hit Mixin")
-		@MixinConfig.MixinToggle(earlyMixin = "mixins.splatterizer.vanilla.json", defaultValue = true)
-		public boolean enableEntityHitMixin = true;
-
+//		@Config.Comment("Enable Entity Hit Mixin")
+//		@Config.Name("Enable Entity Hit Mixin")
+//		@MixinConfig.MixinToggle(earlyMixin = "mixins.splatterizer.vanilla.json", defaultValue = true)
+//		public boolean enableEntityHitMixin = true;
     }
 
 	public static class ClientConfig {
@@ -54,20 +52,10 @@ public class ForgeConfigHandler {
         @Config.Comment("Size of each individual splatter particle in meters")
         @Config.Name("Size of each individual splatter particle in meters")
         public float particleSize = 0.05f;
-
-//        @Config.Comment("Entity:splatter_type mappings")
-//        @Config.Name("Entity:splatter_type mappings")
-//        public String splatterTypes = "minecraft:skeleton=dust minecraft:wither_skeleton=ash minecraft:wither=ash";
-//
-//        @Config.Comment("Default splatter type")
-//        @Config.Name("Default splatter type")
-//        public String defaultSplatterType = "blood";
-
 	}
 
 	@Mod.EventBusSubscriber(modid = SplatterizerMod.MODID)
 	private static class EventHandler {
-
 		@SubscribeEvent
 		public static void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent event) {
 			if(event.getModID().equals(SplatterizerMod.MODID)) {
