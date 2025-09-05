@@ -24,7 +24,7 @@ public class ForgeConfigHandler {
 
 		@Config.Comment("Enable Entity Hit Mixin")
 		@Config.Name("Enable Entity Hit Mixin")
-		@MixinConfig.MixinToggle(lateMixin = "mixins.splatterizer.vanilla.json", defaultValue = true)
+		@MixinConfig.MixinToggle(earlyMixin = "mixins.splatterizer.vanilla.json", defaultValue = true)
 		public boolean enableEntityHitMixin = true;
 
     }
