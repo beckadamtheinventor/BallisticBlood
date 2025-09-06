@@ -1,6 +1,5 @@
 package com.beckadam.splatterizer.particles;
 
-import com.beckadam.splatterizer.SplatterizerMod;
 import com.beckadam.splatterizer.helpers.ParticleSpawnHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -11,17 +10,11 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import org.apache.logging.log4j.Level;
-import org.lwjgl.opengl.GL11;
-
-import java.util.List;
-import java.util.Random;
 
 public class SplatterParticle extends Particle {
     protected ResourceLocation SPLATTER_DECAL_TEXTURE;
@@ -35,14 +28,14 @@ public class SplatterParticle extends Particle {
     public SplatterParticle(World world, double x, double y, double z, double vx, double vy, double vz) {
         super(world, x, y, z);
         setParticleTextureIndex(rand.nextInt(8));
-        this.width = this.height = ForgeConfigHandler.server.particleSize;
+        this.width = this.height = ForgeConfigHandler.client.particleSize;
         this.particleScale = 2.0f;
         this.particleGravity = 1.0f;
-        this.particleMaxAge = ForgeConfigHandler.server.particleLifetime;
-        this.motionX = vx * ForgeConfigHandler.server.particleVelocityMultiplier;
-        this.motionY = vy * ForgeConfigHandler.server.particleVelocityMultiplier;
-        this.motionZ = vz * ForgeConfigHandler.server.particleVelocityMultiplier;
-        fadeStart = ForgeConfigHandler.server.particleFadeStart;
+        this.particleMaxAge = ForgeConfigHandler.client.particleLifetime;
+        this.motionX = vx * ForgeConfigHandler.client.particleVelocityMultiplier;
+        this.motionY = vy * ForgeConfigHandler.client.particleVelocityMultiplier;
+        this.motionZ = vz * ForgeConfigHandler.client.particleVelocityMultiplier;
+        fadeStart = ForgeConfigHandler.client.particleFadeStart;
     }
 
     @Override

@@ -1,23 +1,22 @@
 package com.beckadam.splatterizer.helpers;
 
+import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import com.beckadam.splatterizer.SplatterizerMod;
-import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import com.beckadam.splatterizer.handlers.MessageParticleHandler;
-import com.beckadam.splatterizer.handlers.PacketHandler;
 import com.beckadam.splatterizer.particles.*;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
-import java.util.ArrayList;
 import java.util.Random;
 
+@SideOnly(Side.CLIENT)
 public class ParticleSpawnHelper {
     private static final double EPSILON = 0.000001;
     private static final Random random = new Random();
     private static Vec3d getVertexOnCircleFacingDirection(Vec3d direction, int index, int total, double radius) {
-        double angle = Math.atan2(direction.x, direction.z) - Math.PI * 0.5;
+        double angle = Math.atan2(direction.x, direction.z) + Math.PI * 0.5;
         double rot = (2.0 * Math.PI * index) / (double)total;
         double CX = Math.cos(rot);
         double SX = Math.sin(rot);
@@ -97,17 +96,16 @@ public class ParticleSpawnHelper {
 
     public static Vec3d SpreadInCone(Vec3d dir, int index, int total, double spread) {
         if (total > 1) {
-            Vec3d offset = getVertexOnCircleFacingDirection(dir, index, total, ForgeConfigHandler.server.particleSpreadSize);
+            Vec3d offset = getVertexOnCircleFacingDirection(dir, index, total, ForgeConfigHandler.client.particleSpreadSize);
             return dir.add(offset.scale(spread));
         }
         return dir;
     }
-    public static void splatter(World world, ParticleType type, Vec3d position, Vec3d direction) {
-        ArrayList<MessageParticleHandler.MessageParticleFX.Particle> network_particles = new ArrayList<>();
-        ArrayList<ParticleType> network_particle_types = new ArrayList<>();
-        int total = ForgeConfigHandler.server.particleSpreadCount;
-        double spreadSize = ForgeConfigHandler.server.particleSpreadSize;
-        double spreadVariance = ForgeConfigHandler.server.particleSpreadVariance;
+    public static void splatter(ParticleType type, Vec3d position, Vec3d direction) {
+        World world = Minecraft.getMinecraft().world;
+        int total = ForgeConfigHandler.client.particleSpreadCount;
+        double spreadSize = ForgeConfigHandler.client.particleSpreadSize;
+        double spreadVariance = ForgeConfigHandler.client.particleSpreadVariance;
 //        int total = 1;
         for (int index=0; index<total; index++) {
 //            Vec3d offset = getVertexOnCircleFacingDirection(index, total, direction.normalize(), direction.length());
@@ -115,12 +113,7 @@ public class ParticleSpawnHelper {
             double rand = (0.5f * random.nextFloat() - 0.5f) * spreadVariance;
             Vec3d dir = SpreadInCone(direction.scale(-0.1), index, total, spreadSize*rand);
             spawnParticle(type, world, position, new Vec3d(dir.x, dir.y*0.1f, dir.z));
-            network_particles.add(new MessageParticleHandler.MessageParticleFX.Particle(position, dir));
-            network_particle_types.add(type);
         }
-        MessageParticleHandler.MessageParticleFX message =
-                new MessageParticleHandler.MessageParticleFX(network_particle_types, network_particles);
-        PacketHandler.instance.sendToAll(message);
     }
     public static void spawnParticle(ParticleType type, World world, Vec3d p, Vec3d d) {
         Particle particle;
@@ -142,7 +135,7 @@ public class ParticleSpawnHelper {
                 break;
         }
         if (particle != null) {
-            SplatterizerMod.PROXY.SpawnParticle(particle);
+            Minecraft.getMinecraft().effectRenderer.addEffect(particle);
         }
     }
 }

@@ -21,6 +21,10 @@ public class ForgeConfigHandler {
 
 	public static class ServerConfig {
 
+    }
+
+	public static class ClientConfig {
+
         @Config.Name("Lifetime of splatter particles in ticks")
         public int particleLifetime = 60*20;
 
@@ -39,17 +43,15 @@ public class ForgeConfigHandler {
         @Config.Name("Particle Spread Variance")
         public float particleSpreadVariance = 1.0f;
 
-        @Config.Name("Number of particles to emit each time a splatter is triggered")
-        public int particleSpreadCount = 15;
-
-    }
-
-	public static class ClientConfig {
 
         @Config.Name("Enable/Disable splatter particles")
         public boolean enableSplatterParticles = true;
 
-	}
+        @Config.Name("Number of particles to emit each time a splatter is triggered")
+        public int particleSpreadCount = 15;
+
+
+    }
 
 	@Mod.EventBusSubscriber(modid = SplatterizerMod.MODID)
 	private static class EventHandler {

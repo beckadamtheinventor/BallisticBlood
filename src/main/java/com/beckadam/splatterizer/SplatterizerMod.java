@@ -1,19 +1,19 @@
 package com.beckadam.splatterizer;
 
-import com.beckadam.splatterizer.handlers.LivingEntityHurtHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.EntityPlayer;
+import com.beckadam.splatterizer.handlers.AttackEntityFromHandler;
+import com.beckadam.splatterizer.message.MessageParticleHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.Instance;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import com.beckadam.splatterizer.handlers.ModRegistry;
 import com.beckadam.splatterizer.proxy.CommonProxy;
+
+import static com.beckadam.splatterizer.proxy.CommonProxy.networkWrapperInstance;
 
 @Mod(modid = SplatterizerMod.MODID, version = SplatterizerMod.VERSION, name = SplatterizerMod.NAME, dependencies = "required-after:fermiumbooter")
 public class SplatterizerMod {
@@ -31,8 +31,12 @@ public class SplatterizerMod {
 	
 	@Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        ModRegistry.init();
-        LivingEntityHurtHandler.init(MinecraftForge.EVENT_BUS);
+        AttackEntityFromHandler.init(MinecraftForge.EVENT_BUS);
+        networkWrapperInstance.registerMessage(
+                MessageParticleHandler.MessageParticleFX.Handler.class,
+                MessageParticleHandler.MessageParticleFX.class,
+                0, Side.CLIENT
+        );
     }
 
     @Mod.EventHandler
