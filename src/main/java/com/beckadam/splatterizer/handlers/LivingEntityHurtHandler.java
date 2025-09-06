@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class LivingEntityHurtHandler {
     @SubscribeEvent
     public static void livingHurtEvent(LivingHurtEvent event) {
-        SplatterizerMod.PROXY.AttackEntityFromHandler(event.getSource(), event.getAmount());
+        SplatterizerMod.PROXY.AttackEntityFromHandler(event.getEntity(), event.getSource(), event.getAmount());
     }
 
     public static void init(EventBus eventBus) {

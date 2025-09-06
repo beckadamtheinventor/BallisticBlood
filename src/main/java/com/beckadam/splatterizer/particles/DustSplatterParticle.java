@@ -9,5 +9,6 @@ public class DustSplatterParticle extends SplatterParticle {
         super(world, x, y, z, vx, vy, vz);
         SPLATTER_DECAL_TEXTURE = new ResourceLocation(SplatterizerMod.MODID, "textures/particle/dust_decal.png");
         SPLATTER_PARTICLE_TEXTURE = new ResourceLocation(SplatterizerMod.MODID, "textures/particle/dust_particle.png");
+        particleGravity = 0.5f;
     }
 }

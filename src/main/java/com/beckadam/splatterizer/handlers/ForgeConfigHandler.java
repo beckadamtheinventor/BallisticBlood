@@ -19,39 +19,36 @@ public class ForgeConfigHandler {
 	@Config.Name("Client Options")
 	public static final ClientConfig client = new ClientConfig();
 
-	@MixinConfig(name = SplatterizerMod.MODID) //Needed on config classes that contain MixinToggles for those mixins to be added
 	public static class ServerConfig {
-//		@Config.Comment("Enable Entity Hit Mixin")
-//		@Config.Name("Enable Entity Hit Mixin")
-//		@MixinConfig.MixinToggle(earlyMixin = "mixins.splatterizer.vanilla.json", defaultValue = true)
-//		public boolean enableEntityHitMixin = true;
+
+        @Config.Name("Lifetime of splatter particles in ticks")
+        public int particleLifetime = 60*20;
+
+        @Config.Name("Splatter particle fade start time in ticks")
+        public int particleFadeStart = 30*20;
+
+        @Config.Name("Size of splatter spread relative to velocity")
+        public float particleSpreadSize = 0.8f;
+
+        @Config.Name("Size of each individual splatter particle in meters")
+        public float particleSize = 0.1f;
+
+        @Config.Name("Particle velocity multiplier")
+        public float particleVelocityMultiplier = 1.0f;
+
+        @Config.Name("Particle Spread Variance")
+        public float particleSpreadVariance = 1.0f;
+
+        @Config.Name("Number of particles to emit each time a splatter is triggered")
+        public int particleSpreadCount = 15;
+
     }
 
 	public static class ClientConfig {
 
-        @Config.Comment("Enable/disable splatter particles entirely")
         @Config.Name("Enable/Disable splatter particles")
         public boolean enableSplatterParticles = true;
 
-        @Config.Comment("Lifetime of splatter particles in ticks")
-        @Config.Name("Lifetime of splatter particles in ticks")
-        public int particleLifetime = 5*60*20;
-
-        @Config.Comment("Splatter particle fade start time in ticks")
-        @Config.Name("Splatter particle fade start time in ticks")
-        public int particleFadeStart = 4*60*20;
-
-        @Config.Comment("Number of particles to emit each time a splatter is triggered")
-        @Config.Name("Number of particles to emit each time a splatter is triggered")
-        public int particleSpreadCount = 15;
-
-        @Config.Comment("Size of splatter spread in meters")
-        @Config.Name("Size of splatter spread in meters")
-        public double particleSpreadSize = 0.05;
-
-        @Config.Comment("Size of each individual splatter particle in meters")
-        @Config.Name("Size of each individual splatter particle in meters")
-        public float particleSize = 0.05f;
 	}
 
 	@Mod.EventBusSubscriber(modid = SplatterizerMod.MODID)

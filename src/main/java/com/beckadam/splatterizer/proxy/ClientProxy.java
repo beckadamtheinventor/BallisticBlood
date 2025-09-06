@@ -4,8 +4,10 @@ import com.beckadam.splatterizer.particles.ParticleType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.boss.EntityWither;
 import net.minecraft.entity.monster.EntitySkeleton;
+import net.minecraft.entity.monster.EntitySlime;
 import net.minecraft.entity.monster.EntityWitherSkeleton;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.Vec3d;
@@ -28,14 +30,13 @@ public class ClientProxy extends CommonProxy {
     }
 
     @Override
-    public void AttackEntityFromHandler(DamageSource source, float amount) {
+    public void AttackEntityFromHandler(Entity entity, DamageSource source, float amount) {
         // return early if disabled client-side
         if (!ForgeConfigHandler.client.enableSplatterParticles) {
-            SplatterizerMod.LOGGER.log(Level.INFO, "Entity attacked, not doing particles: mod is disabled client-side!");
+//            SplatterizerMod.LOGGER.log(Level.INFO, "Entity attacked, not doing particles: mod is disabled client-side!");
             return;
         }
-        SplatterizerMod.LOGGER.log(Level.INFO, "Entity attacked, trying to do particles");
-        double veloX=0, veloY=0, veloZ=0;
+//        SplatterizerMod.LOGGER.log(Level.INFO, "Doing particles");
 
         Entity sourceEntity = source.getImmediateSource();
         Entity trueSource = source.getTrueSource();
@@ -43,37 +44,49 @@ public class ClientProxy extends CommonProxy {
         if (sourceEntity == null || trueSource == null) {
             return;
         }
-        Vec3d damageLoc = source.getDamageLocation();
-        if (damageLoc == null) {
-            damageLoc = new Vec3d(sourceEntity.posX, sourceEntity.posY, sourceEntity.posZ);
-        }
+        Vec3d particlePos = new Vec3d(
+                entity.posX*2.0f - entity.prevPosX,
+                entity.posY*2.0f + entity.getEyeHeight() - entity.prevPosY,
+                entity.posZ*2.0f - entity.prevPosZ
+        );
+        Vec3d velocity;
+        // for projectiles, splatter in the direction it's moving.
+        // otherwise, use a weighted sum of the entity's motion vector
+        // and the distance vector (normalized) from the entity to the target.
         if (source.isProjectile()) {
-            veloX = sourceEntity.posX - sourceEntity.prevPosX;
-            veloY = sourceEntity.posY - sourceEntity.prevPosY;
-            veloZ = sourceEntity.posZ - sourceEntity.prevPosZ;
+            velocity = new Vec3d(sourceEntity.motionX, sourceEntity.motionY, sourceEntity.motionZ);
         } else {
-            veloX = trueSource.posX - trueSource.prevPosX;
-            veloY = trueSource.posY - trueSource.prevPosY;
-            veloZ = trueSource.posZ - trueSource.prevPosZ;
+            velocity =
+                    trueSource.getPositionVector().subtract(entity.getPositionVector()).normalize().scale(3.0)
+                    .add(new Vec3d(sourceEntity.motionX, sourceEntity.motionY, sourceEntity.motionZ).scale(5.0f));
         }
 
-        World world = sourceEntity.getEntityWorld();
-        ParticleType particle;
-        if (sourceEntity instanceof EntitySkeleton) {
-            // dust particles
-            particle = ParticleType.DUST_SPLATTER;
-            SplatterizerMod.LOGGER.log(Level.INFO, "Dust particle");
-        } else if (sourceEntity instanceof EntityWitherSkeleton || sourceEntity instanceof EntityWither) {
-            // ash particles
-            particle = ParticleType.ASH_SPLATTER;
-            SplatterizerMod.LOGGER.log(Level.INFO, "Ash particle");
+        SplatterizerMod.LOGGER.log(Level.INFO, "Sending splatter at velocity: " + velocity);
+
+        World world = entity.getEntityWorld();
+        ParticleType particleType = getParticleType(entity);
+        // Spawn particles of particleType using position, velocity (scaled by damage amount)
+        // Note that this function spawns multiple particles in a cone shape facing the velocity direction
+        ParticleSpawnHelper.splatter(world, particleType, particlePos, velocity);
+    }
+
+    private static ParticleType getParticleType(Entity entity) {
+        ParticleType particleType;
+        // hardcoded for now, could probably make this more configurable
+        if (entity instanceof EntitySkeleton) {
+            // dust particles/decals
+            particleType = ParticleType.DUST_SPLATTER;
+        } else if (entity instanceof EntityWitherSkeleton || entity instanceof EntityWither) {
+            // ash particles/decals
+            particleType = ParticleType.ASH_SPLATTER;
+        } else if (entity instanceof EntitySlime) {
+            // slime particles/decals
+            particleType = ParticleType.SLIME_SPLATTER;
         } else {
-            // blood particles
-            SplatterizerMod.LOGGER.log(Level.INFO, "Blood particle");
-            particle = ParticleType.BLOOD_SPLATTER;
+            // blood particles/decals
+            particleType = ParticleType.BLOOD_SPLATTER;
         }
-        Vec3d velocity = new Vec3d(veloX, veloY, veloZ).scale(1.0f + amount * 0.0625f);
-        ParticleSpawnHelper.splatter(world, particle, damageLoc, velocity);
+        return particleType;
     }
 
 }

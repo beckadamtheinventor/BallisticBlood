@@ -85,7 +85,7 @@ public class MessageParticleHandler {
         public static class Handler implements IMessageHandler<MessageParticleFX, IMessage> {
             @Override
             public IMessage onMessage(MessageParticleFX message, MessageContext ctx) {
-                if(ctx.side == Side.CLIENT) {
+                if(ctx.side == Side.CLIENT && ForgeConfigHandler.client.enableSplatterParticles) {
                     if (!message.particles.isEmpty() && !message.types.isEmpty()) {
                         Minecraft.getMinecraft().addScheduledTask(() -> {
                             for (int i=0; i<message.particles.size(); i++) {
