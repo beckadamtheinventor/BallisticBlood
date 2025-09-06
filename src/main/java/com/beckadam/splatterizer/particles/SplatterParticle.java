@@ -2,6 +2,7 @@ package com.beckadam.splatterizer.particles;
 
 import com.beckadam.splatterizer.helpers.ParticleMathHelper;
 import com.beckadam.splatterizer.helpers.ParticleSpawnHelper;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.particle.Particle;
@@ -11,6 +12,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
@@ -117,10 +119,10 @@ public class SplatterParticle extends Particle {
 //        }
 //        GL11.glPushMatrix();
         buffer.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
-        buffer.pos((double)px + quad[0].x, (double)py + quad[0].y, (double)pz + quad[0].z).tex(u1, v1).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
-        buffer.pos((double)px + quad[1].x, (double)py + quad[1].y, (double)pz + quad[1].z).tex(u1, v0).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
-        buffer.pos((double)px + quad[2].x, (double)py + quad[2].y, (double)pz + quad[2].z).tex(u0, v0).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
-        buffer.pos((double)px + quad[3].x, (double)py + quad[3].y, (double)pz + quad[3].z).tex(u0, v1).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
+        buffer.pos(px + quad[0].x, py + quad[0].y, pz + quad[0].z).tex(u1, v1).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
+        buffer.pos(px + quad[1].x, py + quad[1].y, pz + quad[1].z).tex(u1, v0).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
+        buffer.pos(px + quad[2].x, py + quad[2].y, pz + quad[2].z).tex(u0, v0).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
+        buffer.pos(px + quad[3].x, py + quad[3].y, pz + quad[3].z).tex(u0, v1).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
         Tessellator.getInstance().draw();
 //        GL11.glPopMatrix();
         GlStateManager.disableBlend();
@@ -146,7 +148,82 @@ public class SplatterParticle extends Particle {
             if ((this.particleAge & 3) == 0) {
                 this.nextTextureIndexX();
             }
+        } else {
+            if (this.checkShouldFall()) {
+                if (this.checkCovered()) {
+                    this.setExpired();
+                } else {
+                    this.onGround = false;
+                    this.finalQuad = null;
+                }
+            }
         }
+    }
+
+    public boolean checkShouldFall() {
+//        double fallArea = 0.0;
+//        double totalArea = 0.0;
+        int falls = 0;
+        for (Vec3d q : finalQuad) {
+            Vec3d posVec = new Vec3d(this.posX + q.x - hitNormal.x, this.posY + q.y - hitNormal.y, this.posZ + q.z - hitNormal.z);
+            BlockPos behind = new BlockPos(posVec);
+            IBlockState block = world.getBlockState(behind);
+//            double ax = Math.abs(posVec.x - this.posX);
+//            double ay = Math.abs(posVec.y - this.posY);
+//            double az = Math.abs(posVec.z - this.posZ);
+//            double area = 1.0;
+//            if (ax >= 0.001) {
+//                area *= ax;
+//            }
+//            if (ay >= 0.001) {
+//                area *= ay;
+//            }
+//            if (az >= 0.001) {
+//                area *= az;
+//            }
+//            totalArea += area;
+//            if (!block.isFullBlock()) {
+//                fallArea += area;
+//            }
+            if (!block.isFullBlock()) {
+                falls++;
+            }
+        }
+//        return (fallArea / totalArea) >= 0.05;
+        return falls >= 3;
+    }
+
+    public boolean checkCovered() {
+//        double coveredArea = 0.0;
+//        double totalArea = 0.0;
+        int covered = 0;
+        for (Vec3d q : finalQuad) {
+            Vec3d posVec = new Vec3d(this.posX + q.x + hitNormal.x, this.posY + q.y + hitNormal.y, this.posZ + q.z + hitNormal.z);
+            BlockPos above = new BlockPos(posVec);
+            IBlockState block = world.getBlockState(above);
+//            double ax = Math.abs(posVec.x - this.posX);
+//            double ay = Math.abs(posVec.y - this.posY);
+//            double az = Math.abs(posVec.z - this.posZ);
+//            double area = 1.0;
+//            if (ax >= 0.001) {
+//                area *= ax;
+//            }
+//            if (ay >= 0.001) {
+//                area *= ay;
+//            }
+//            if (az >= 0.001) {
+//                area *= az;
+//            }
+//            totalArea += area;
+//            if (block.isFullBlock()) {
+//                coveredArea += area;
+//            }
+            if (block.isFullBlock()) {
+                covered++;
+            }
+        }
+//        return (coveredArea / totalArea) >= 0.05;
+        return covered > 0;
     }
 
     @Override
@@ -189,13 +266,13 @@ public class SplatterParticle extends Particle {
                 case SOUTH:
                     this.hitNormal = new Vec3d(0.0, 0.0, -Math.signum(dz));
                     this.posZ = pos.getZ() + (dz >= 0 ? 0 : 1);
-                    this.posZ -= 0.0025 * Math.signum(dz) * (0.6f + 0.4f * rand.nextFloat());
+                    this.posZ -= 0.0025 * Math.signum(dz) * (0.8f + 0.4f * rand.nextFloat());
                     break;
                 case EAST:
                 case WEST:
                     this.hitNormal = new Vec3d(-Math.signum(dx), 0.0, 0.0);
                     this.posX = pos.getX() + (dx >= 0 ? 0 : 1);
-                    this.posX -= 0.0025 * Math.signum(dx) * (0.6f + 0.4f * rand.nextFloat());
+                    this.posX -= 0.0025 * Math.signum(dx) * (0.8f + 0.4f * rand.nextFloat());
                     break;
                 case UP:
                 default:
