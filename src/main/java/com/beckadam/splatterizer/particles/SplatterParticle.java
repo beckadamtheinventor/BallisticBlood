@@ -1,5 +1,6 @@
 package com.beckadam.splatterizer.particles;
 
+import com.beckadam.splatterizer.helpers.ParticleMathHelper;
 import com.beckadam.splatterizer.helpers.ParticleSpawnHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -82,7 +83,7 @@ public class SplatterParticle extends Particle {
         double pz = (this.prevPosZ + (this.posZ - this.prevPosZ) * partialTicks - (float)ipz);
         if (this.onGround) {
             if (this.finalQuad == null) {
-                this.finalQuad = ParticleSpawnHelper.getAxisAlignedQuad(this.hitNormal, w);
+                this.finalQuad = ParticleMathHelper.getAxisAlignedQuad(this.hitNormal, w);
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Setting particle to Normal Axis Aligned on wall/floor: " + this.hitNormal.toString());
             }
             quad = finalQuad;

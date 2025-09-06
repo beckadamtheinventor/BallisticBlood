@@ -32,7 +32,7 @@ public class ForgeConfigHandler {
         public int particleFadeStart = 30*20;
 
         @Config.Name("Size of splatter spread relative to velocity")
-        public float particleSpreadSize = 0.8f;
+        public float particleSpreadSize = 2.0f;
 
         @Config.Name("Size of each individual splatter particle in meters")
         public float particleSize = 0.1f;
