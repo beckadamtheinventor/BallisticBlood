@@ -1,6 +1,10 @@
 package com.beckadam.splatterizer.helpers;
 
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
+import com.beckadam.splatterizer.particles.types.AshSplatterParticle;
+import com.beckadam.splatterizer.particles.types.BloodSplatterParticle;
+import com.beckadam.splatterizer.particles.types.DustSplatterParticle;
+import com.beckadam.splatterizer.particles.types.SlimeSplatterParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.util.math.Vec3d;

@@ -1,18 +1,12 @@
 package com.beckadam.splatterizer.helpers;
 
-import com.beckadam.splatterizer.SplatterizerMod;
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
 import com.beckadam.splatterizer.particles.ParticleType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
-import net.minecraft.entity.boss.EntityWither;
-import net.minecraft.entity.monster.EntitySkeleton;
-import net.minecraft.entity.monster.EntitySlime;
-import net.minecraft.entity.monster.EntityWitherSkeleton;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.Vec3d;
-import org.apache.logging.log4j.Level;
 
 public class ParticleHelper {
     public static ParticleType getParticleTypeForEntity(Entity entity) {

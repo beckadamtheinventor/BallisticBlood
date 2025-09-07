@@ -70,13 +70,35 @@ public class ForgeConfigHandler {
 
         @Config.Comment("Particles emitted is scaled by the damage of the attack and the health of the entity")
         @Config.Name("Number of particles to emit each time a splatter is triggered")
-        public int particleSpreadCount = 15;
+        public int particleSpreadCount = 7;
 
         @Config.Name("Maximum particles per splatter")
         public int particleSpreadMax = 31;
 
+        @Config.Name("Sub-particles per splatter particle emission")
+        public int particleSubCount = 3;
+
+        @Config.Name("Ticks per sub-particle emission")
+        public int particleSubEmissionRate = 4;
+
+        @Config.Name("Maximum sub-particles per splatter particle")
+        public int particleSubMax = 15;
+
         @Config.Name("Extra particles per heart of damage")
         public float extraParticlesPerHeartOfDamage = 0.25f;
+
+        @Config.Name("Blood Sub-particle base velocity")
+        public float bloodSubParticleBaseVelocity = 1.0f;
+
+        @Config.Name("Ash Sub-particle base velocity")
+        public float ashSubParticleBaseVelocity = 0.2f;
+
+        @Config.Name("Dust Sub-particle base velocity")
+        public float dustSubParticleBaseVelocity = 0.2f;
+
+        @Config.Name("Slime Sub-particle base velocity")
+        public float slimeSubParticleBaseVelocity = 1.2f;
+
 
     }
 
