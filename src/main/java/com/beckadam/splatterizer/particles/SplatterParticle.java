@@ -1,7 +1,6 @@
 package com.beckadam.splatterizer.particles;
 
-import com.beckadam.splatterizer.helpers.ParticleMathHelper;
-import com.beckadam.splatterizer.helpers.ParticleSpawnHelper;
+import com.beckadam.splatterizer.helpers.ParticleHelper;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -12,7 +11,6 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
@@ -85,7 +83,7 @@ public class SplatterParticle extends Particle {
         double pz = (this.prevPosZ + (this.posZ - this.prevPosZ) * partialTicks - (float)ipz);
         if (this.onGround) {
             if (this.finalQuad == null) {
-                this.finalQuad = ParticleMathHelper.getAxisAlignedQuad(this.hitNormal, w);
+                this.finalQuad = ParticleHelper.getAxisAlignedQuad(this.hitNormal, w);
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Setting particle to Normal Axis Aligned on wall/floor: " + this.hitNormal.toString());
             }
             quad = finalQuad;
@@ -149,10 +147,10 @@ public class SplatterParticle extends Particle {
                 this.nextTextureIndexX();
             }
         } else {
-            if (this.checkShouldFall()) {
+            if ((this.particleAge & 3) == 0) {
                 if (this.checkCovered()) {
                     this.setExpired();
-                } else {
+                } else if (this.checkShouldFall()) {
                     this.onGround = false;
                     this.finalQuad = null;
                 }
@@ -198,7 +196,7 @@ public class SplatterParticle extends Particle {
 //        double totalArea = 0.0;
         int covered = 0;
         for (Vec3d q : finalQuad) {
-            Vec3d posVec = new Vec3d(this.posX + q.x + hitNormal.x, this.posY + q.y + hitNormal.y, this.posZ + q.z + hitNormal.z);
+            Vec3d posVec = new Vec3d(this.posX + q.x + hitNormal.x * 0.5, this.posY + q.y + hitNormal.y * 0.5, this.posZ + q.z + hitNormal.z * 0.5);
             BlockPos above = new BlockPos(posVec);
             IBlockState block = world.getBlockState(above);
 //            double ax = Math.abs(posVec.x - this.posX);

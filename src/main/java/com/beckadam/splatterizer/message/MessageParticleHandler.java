@@ -1,7 +1,7 @@
 package com.beckadam.splatterizer.message;
 
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import com.beckadam.splatterizer.helpers.ParticleSpawnHelper;
+import com.beckadam.splatterizer.helpers.ParticleClientHelper;
 import com.beckadam.splatterizer.particles.ParticleType;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.util.math.Vec3d;
@@ -17,11 +17,13 @@ public class MessageParticleHandler {
         private ParticleType splatterType;
         private Vec3d splatterPosition;
         private Vec3d splatterDirection;
+        private float splatterDamage;
 
-        public MessageParticleFX(ParticleType type, Vec3d position, Vec3d direction) {
+        public MessageParticleFX(ParticleType type, Vec3d position, Vec3d direction, float damage) {
             splatterType = type;
             splatterPosition = position;
             splatterDirection = direction;
+            splatterDamage = damage;
         }
 
         public MessageParticleFX() {
@@ -33,8 +35,9 @@ public class MessageParticleHandler {
             if (t >= 0 && t < ParticleType.values().length) {
                 splatterType = ParticleType.values()[t];
             } else {
-                splatterType = ParticleType.BLOOD_SPLATTER;
+                splatterType = ParticleType.BLOOD;
             }
+            splatterDamage = buf.readFloat();
             splatterPosition = new Vec3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
             splatterDirection = new Vec3d(buf.readDouble(), buf.readDouble(), buf.readDouble());
         }
@@ -42,6 +45,7 @@ public class MessageParticleHandler {
         @Override
         public void toBytes(ByteBuf buf) {
             buf.writeInt(splatterType.ordinal());
+            buf.writeFloat(splatterDamage);
             buf.writeDouble(splatterPosition.x);
             buf.writeDouble(splatterPosition.y);
             buf.writeDouble(splatterPosition.z);
@@ -55,10 +59,11 @@ public class MessageParticleHandler {
             @Override
             public IMessage onMessage(MessageParticleFX message, MessageContext ctx) {
                 if(ctx.side == Side.CLIENT && ForgeConfigHandler.client.enableSplatterParticles) {
-                    ParticleSpawnHelper.splatter(
+                    ParticleClientHelper.splatter(
                             message.splatterType,
                             message.splatterPosition,
-                            message.splatterDirection
+                            message.splatterDirection,
+                            message.splatterDamage
                     );
                 }
                 return null;

@@ -1,32 +1,34 @@
 package com.beckadam.splatterizer.helpers;
 
+import com.beckadam.splatterizer.SplatterizerMod;
+import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
 import com.beckadam.splatterizer.particles.ParticleType;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityList;
 import net.minecraft.entity.boss.EntityWither;
 import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.monster.EntitySlime;
 import net.minecraft.entity.monster.EntityWitherSkeleton;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.Vec3d;
+import org.apache.logging.log4j.Level;
 
-public class ParticleMathHelper {
+public class ParticleHelper {
     public static ParticleType getParticleTypeForEntity(Entity entity) {
-        ParticleType particleType;
-        // hardcoded for now, could probably make this more configurable
-        if (entity instanceof EntitySkeleton) {
-            // dust particles/decals
-            particleType = ParticleType.DUST_SPLATTER;
-        } else if (entity instanceof EntityWitherSkeleton || entity instanceof EntityWither) {
-            // ash particles/decals
-            particleType = ParticleType.ASH_SPLATTER;
-        } else if (entity instanceof EntitySlime) {
-            // slime particles/decals
-            particleType = ParticleType.SLIME_SPLATTER;
-        } else {
-            // blood particles/decals
-            particleType = ParticleType.BLOOD_SPLATTER;
+        if (ForgeConfigHandler.server.entitySplatterTypeMap == null) {
+            ForgeConfigHandler.ParseSplatterTypes();
         }
-        return particleType;
+        ResourceLocation rl = EntityList.getKey(entity);
+        try {
+            if (ForgeConfigHandler.server.entitySplatterTypeMap.containsKey(rl)) {
+                return ParticleType.valueOf(ForgeConfigHandler.server.entitySplatterTypeMap.get(rl));
+            } else {
+                return ParticleType.valueOf(ForgeConfigHandler.server.entitySplatterTypeDefault);
+            }
+        } catch (Exception e) {
+            return ParticleType.BLOOD;
+        }
     }
 
     public static Vec3d getParticlePosition(Entity entity) {
@@ -53,6 +55,10 @@ public class ParticleMathHelper {
                     .add(new Vec3d(sourceEntity.motionX, sourceEntity.motionY, sourceEntity.motionZ).scale(2.0f))
                     .scale(0.5);
         }
+    }
+
+    public static int scaleCountByDamage(int count, float amount) {
+        return (int)(count * (1.0f + ForgeConfigHandler.client.extraParticlesPerHeartOfDamage * amount));
     }
 
     private static final double EPSILON = 0.000001;
