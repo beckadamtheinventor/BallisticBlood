@@ -149,11 +149,12 @@ public class ParticleHelper {
     public static Vec3d SpreadParticleVelocity(Vec3d dir, int index, int total, double variance, double spread) {
         if (total > 1) {
             double r = (random.nextFloat() - 0.5) * variance;
+            double r2 = random.nextFloat() * variance;
             double dx = (double)index / (double)total + r - 0.5;
             double dy = 0.25 * random.nextFloat() - 0.125;
             double ang = Math.atan2(dir.z, dir.x) + dx * 0.5 * Math.PI;
             Vec3d offset = new Vec3d(Math.cos(ang), dy, Math.sin(ang));
-            return dir.add(offset.scale(spread));
+            return dir.add(offset.scale(spread * r2));
         }
         return dir;
     }
