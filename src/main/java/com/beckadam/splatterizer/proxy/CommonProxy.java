@@ -19,7 +19,7 @@ public class CommonProxy {
         // Spawn particles of particleType using position, velocity (scaled by damage amount)
         SplatterizerMod.PROXY.sendMessageParticle(
                 entity.dimension, particleType,
-                ParticleHelper.getParticlePosition(entity),
+                ParticleHelper.getParticlePosition(entity, source.getImmediateSource()),
                 ParticleHelper.getParticleVelocity(entity.getPositionVector(), source),
                 amount
         );

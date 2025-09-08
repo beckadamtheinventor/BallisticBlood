@@ -5,4 +5,5 @@ public enum ParticleType {
     DUST,
     ASH,
     SLIME,
+    ENDER,
 };

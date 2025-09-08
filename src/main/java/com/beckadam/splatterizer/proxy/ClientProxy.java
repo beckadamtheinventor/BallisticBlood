@@ -16,7 +16,7 @@ public class ClientProxy extends CommonProxy {
         // Spawn particles of particleType using position, velocity (scaled by damage amount)
         ParticleClientHelper.splatter(
                 particleType,
-                ParticleHelper.getParticlePosition(entity),
+                ParticleHelper.getParticlePosition(entity, source.getImmediateSource()),
                 ParticleHelper.getParticleVelocity(entity.getPositionVector(), source),
                 amount
         );

@@ -30,12 +30,16 @@ public class ForgeConfigHandler {
 
 	public static class ServerConfig {
         @Config.Name("Entity splatter types")
-        public String entitySplatterTypes =
-                "minecraft:skeleton=DUST " +
-                "minecraft:skeleton_horse=DUST " +
-                "minecraft:wither=ASH " +
-                "minecraft:wither_skeleton=ASH " +
-                "minecraft:slime=SLIME";
+        public String[] entitySplatterTypes = new String[] {
+                "minecraft:skeleton=DUST",
+                "minecraft:skeleton_horse=DUST",
+                "minecraft:wither=ASH",
+                "minecraft:wither_skeleton=ASH",
+                "minecraft:slime=SLIME",
+                "minecraft:enderman=ENDER",
+                "minecraft:endermite=ENDER",
+                "minecraft:shulker=ENDER",
+        };
 
         @Config.Name("Default splatter type")
         public String entitySplatterTypeDefault = "BLOOD";
@@ -52,11 +56,11 @@ public class ForgeConfigHandler {
         @Config.Name("Splatter particle fade start time in ticks")
         public int particleFadeStart = 30*20;
 
-        @Config.Name("Size of splatter spread relative to velocity")
+        @Config.Name("Size of splatter spread")
         public float particleSpreadSize = 2.0f;
 
         @Config.Name("Size of each individual splatter particle in meters")
-        public float particleSize = 0.1f;
+        public float particleSize = 0.2f;
 
         @Config.Name("Particle velocity multiplier")
         public float particleVelocityMultiplier = 1.0f;
@@ -88,16 +92,19 @@ public class ForgeConfigHandler {
         public float extraParticlesPerHeartOfDamage = 0.25f;
 
         @Config.Name("Blood Sub-particle base velocity")
-        public float bloodSubParticleBaseVelocity = 1.0f;
+        public float bloodSubParticleBaseVelocity = 0.2f;
 
         @Config.Name("Ash Sub-particle base velocity")
-        public float ashSubParticleBaseVelocity = 0.2f;
+        public float ashSubParticleBaseVelocity = 0.05f;
 
         @Config.Name("Dust Sub-particle base velocity")
-        public float dustSubParticleBaseVelocity = 0.2f;
+        public float dustSubParticleBaseVelocity = 0.025f;
 
         @Config.Name("Slime Sub-particle base velocity")
-        public float slimeSubParticleBaseVelocity = 1.2f;
+        public float slimeSubParticleBaseVelocity = 0.3f;
+
+        @Config.Name("Ender splatter Sub-particle base velocity")
+        public float enderSubParticleBaseVelocity = 0.1f;
 
 
     }
@@ -119,7 +126,7 @@ public class ForgeConfigHandler {
         } else {
             server.entitySplatterTypeMap.clear();
         }
-        for (String s : server.entitySplatterTypes.split(" ")) {
+        for (String s : server.entitySplatterTypes) {
             String[] a = s.split("=", 2);
             if (a.length >= 2) {
                 server.entitySplatterTypeMap.put(new ResourceLocation(a[0]), a[1]);

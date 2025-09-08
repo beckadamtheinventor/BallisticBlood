@@ -5,10 +5,17 @@ import com.beckadam.splatterizer.particles.ParticleType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.util.DamageSource;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 
+import java.util.Random;
+
 public class ParticleHelper {
+    // TODO: Make the seed not constant
+    public static final Random random = new Random(133742069);
     public static ParticleType getParticleTypeForEntity(Entity entity) {
         if (ForgeConfigHandler.server.entitySplatterTypeMap == null) {
             ForgeConfigHandler.ParseSplatterTypes();
@@ -25,12 +32,19 @@ public class ParticleHelper {
         }
     }
 
-    public static Vec3d getParticlePosition(Entity entity) {
-        return new Vec3d(
-                entity.posX*2.0f - entity.prevPosX,
-                entity.posY*2.0f + entity.getEyeHeight() - entity.prevPosY,
-                entity.posZ*2.0f - entity.prevPosZ
-        );
+    public static Vec3d getParticlePosition(Entity target, Entity source) {
+        AxisAlignedBB box = target.getCollisionBoundingBox();
+        if (box != null) {
+            RayTraceResult rt = box.calculateIntercept(
+                    source.getPositionVector(),
+                    source.getPositionVector()
+                            .add(source.getLookVec().scale(32.0))
+            );
+            if (rt != null) {
+                return rt.hitVec;
+            }
+        }
+        return target.getPositionVector();
     }
 
     public static Vec3d getParticleVelocity(Vec3d target, DamageSource source) {
@@ -47,7 +61,7 @@ public class ParticleHelper {
         } else {
             return target.subtract(trueSource.getPositionVector()).normalize()
                     .add(new Vec3d(sourceEntity.motionX, sourceEntity.motionY, sourceEntity.motionZ).scale(2.0f))
-                    .scale(0.5);
+                    .scale(0.4 + random.nextFloat() * 0.2);
         }
     }
 
@@ -55,7 +69,6 @@ public class ParticleHelper {
         return (int)(count * (1.0f + ForgeConfigHandler.client.extraParticlesPerHeartOfDamage * amount));
     }
 
-    private static final double EPSILON = 0.000001;
     private static Vec3d getVertexOnCircleFacingDirection(Vec3d direction, int index, int total, double radius, double vertical_radius) {
         double angle = Math.atan2(direction.x, direction.z) + Math.PI * 0.5;
         double rot = (2.0 * Math.PI * index) / (double)total;
@@ -70,7 +83,7 @@ public class ParticleHelper {
         );
     }
 
-    public static Vec3d[] getAxisAlignedQuad(Vec3d direction, double width) {
+    public static Vec3d[] getAxisAlignedQuad(EnumFacing dir, double width) {
         Vec3d v000 = new Vec3d(-1, -1, -1);
         Vec3d v001 = new Vec3d(-1, -1,  1);
         Vec3d v010 = new Vec3d(-1,  1, -1);
@@ -84,60 +97,62 @@ public class ParticleHelper {
         Vec3d dZ = new Vec3d(0, 0, 1);
         width /= 2.0;
         // vertex order per quad: ++, +-, --, -+
-        if (Math.abs(direction.z) < EPSILON && Math.abs(direction.y) < EPSILON) {
-            if (direction.x < 0) { // facing -X
+        switch (dir) {
+            case WEST:
                 return new Vec3d[] {
                         v011.add(dX).scale(width),
                         v010.add(dX).scale(width),
                         v000.add(dX).scale(width),
                         v001.add(dX).scale(width)
                 };
-            } else { // facing +X
+            case EAST:
                 return new Vec3d[] {
                         v110.subtract(dX).scale(width),
                         v100.subtract(dX).scale(width),
                         v101.subtract(dX).scale(width),
                         v111.subtract(dX).scale(width)
                 };
-            }
-        } else if (Math.abs(direction.x) < EPSILON && Math.abs(direction.y) < EPSILON) {
-            if (direction.z < 0) { // facing -Z
+            case NORTH:
                 return new Vec3d[] {
                         v110.add(dZ).scale(width),
                         v100.add(dZ).scale(width),
                         v000.add(dZ).scale(width),
                         v010.add(dZ).scale(width)
                 };
-            } else { // facing +Z
+            case SOUTH:
                 return new Vec3d[] {
                         v101.subtract(dZ).scale(width),
                         v001.subtract(dZ).scale(width),
                         v011.subtract(dZ).scale(width),
                         v111.subtract(dZ).scale(width)
                 };
-            }
-        } else {
-            if (direction.y < 0) { // facing -Y
+            case DOWN:
                 return new Vec3d[] {
                         v101.add(dY).scale(width),
                         v100.add(dY).scale(width),
                         v000.add(dY).scale(width),
                         v001.add(dY).scale(width)
                 };
-            } else { // facing +Y
+            case UP:
                 return new Vec3d[] {
                         v110.subtract(dY).scale(width),
                         v010.subtract(dY).scale(width),
                         v011.subtract(dY).scale(width),
                         v111.subtract(dY).scale(width)
                 };
-            }
+            default:
+                break;
         }
+        return new Vec3d[] {};
     }
 
-    public static Vec3d SpreadInCone(Vec3d dir, int index, int total, double spread) {
+    public static Vec3d SpreadParticleVelocity(Vec3d dir, int index, int total, double variance, double spread) {
         if (total > 1) {
-            Vec3d offset = getVertexOnCircleFacingDirection(dir, index, total, 1.0, 0.1);
+            double r = (random.nextFloat() - 0.5) * variance;
+            double dx = (double)index / (double)total + r - 0.5;
+            double dy = 0.25 * random.nextFloat() - 0.125;
+            double ang = Math.atan2(dir.z, dir.x) + dx * 0.5 * Math.PI;
+            Vec3d offset = new Vec3d(Math.cos(ang), dy, Math.sin(ang));
             return dir.add(offset.scale(spread));
         }
         return dir;

@@ -14,14 +14,18 @@ public class DustSplatterParticle extends SplatterParticle {
         SPLATTER_PARTICLE_TEXTURE = new ResourceLocation(SplatterizerMod.MODID, "textures/particle/dust_particle.png");
         particleGravity = 0.5f;
         for (int i = 0; i < ForgeConfigHandler.client.particleSubCount; i++) {
-            Vec3d r = new Vec3d(rand.nextFloat()-0.5f, rand.nextFloat()-0.5f, rand.nextFloat()-0.5f)
-                    .normalize().scale(ForgeConfigHandler.client.dustSubParticleBaseVelocity);
-            r = new Vec3d(
-                    vx + r.x,
-                    vy + r.y,
-                    vz + r.z
-            );
-            addSubparticle(new DustSubParticle(world, x, y, z, r.x, r.y, r.z));
+            addSubparticle(vx, vy, vz);
         }
+    }
+
+    public void addSubparticle(double vx, double vy, double vz) {
+        Vec3d r = new Vec3d(rand.nextFloat()-0.5f, rand.nextFloat()-0.5f, rand.nextFloat()-0.5f)
+                .normalize().scale(ForgeConfigHandler.client.dustSubParticleBaseVelocity);
+        r = new Vec3d(
+                vx + r.x,
+                vy + r.y,
+                vz + r.z
+        );
+        addSubparticle(new DustSubParticle(world, this.posX, this.posY, this.posZ, r.x, r.y, r.z));
     }
 }

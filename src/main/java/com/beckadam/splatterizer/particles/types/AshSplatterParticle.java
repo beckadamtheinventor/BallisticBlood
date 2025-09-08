@@ -21,7 +21,7 @@ public class AshSplatterParticle extends SplatterParticle {
                     vy + r.y,
                     vz + r.z
             );
-            addSubparticle(new AshSubParticle(world, x, y, z, r.x, r.y, r.z));
+            addSubparticle(new AshSubParticle(world, this.posX, this.posY, this.posZ, r.x, r.y, r.z));
         }
     }
 }

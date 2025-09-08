@@ -1,5 +1,6 @@
 package com.beckadam.splatterizer.particles;
 
+import com.beckadam.splatterizer.SplatterizerMod;
 import com.beckadam.splatterizer.helpers.ParticleHelper;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -10,34 +11,41 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.RayTraceResult;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.*;
 import net.minecraft.world.World;
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
+import org.apache.logging.log4j.Level;
+
+import java.util.List;
 
 
 public class SplatterParticleBase extends Particle {
     protected ResourceLocation SPLATTER_DECAL_TEXTURE;
     protected ResourceLocation SPLATTER_PARTICLE_TEXTURE;
+    protected GlStateManager.SourceFactor blendSourceFactor = GlStateManager.SourceFactor.SRC_ALPHA;
+    protected GlStateManager.DestFactor blendDestFactor = GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA;
     protected static int fadeStart;
     protected static final float particleTextureWidth = 4.0f;
 
+    protected List<AxisAlignedBB> worldCollisionBoxes;
     protected Vec3d hitNormal;
     protected Vec3d[] finalQuad;
+    protected Vec2f[] finalUVs;
+    protected EnumFacing facing;
 
     protected static final EntityPlayerSP player = Minecraft.getMinecraft().player;
-    protected float ipx;
-    protected float ipy;
-    protected float ipz;
+    protected static float ipx, ipy, ipz;
+
 
     //    protected Vec3d facing;
 
     public SplatterParticleBase(World world, double x, double y, double z, double vx, double vy, double vz) {
         super(world, x, y, z);
-        setParticleTextureIndex(rand.nextInt(8));
-        this.width = this.height = ForgeConfigHandler.client.particleSize;
+        setParticleTextureIndex(rand.nextInt((int)particleTextureWidth));
+        this.width = ForgeConfigHandler.client.particleSize;
+        this.height = 0.1f;
         this.particleScale = 2.0f;
         this.particleGravity = 1.0f;
         this.particleMaxAge = ForgeConfigHandler.client.particleLifetime;
@@ -45,6 +53,7 @@ public class SplatterParticleBase extends Particle {
         this.motionY = vy * ForgeConfigHandler.client.particleVelocityMultiplier;
         this.motionZ = vz * ForgeConfigHandler.client.particleVelocityMultiplier;
         fadeStart = ForgeConfigHandler.client.particleFadeStart;
+        finalUVs = new Vec2f[] { Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO };
     }
 
     @Override
@@ -77,142 +86,149 @@ public class SplatterParticleBase extends Particle {
             this.move(this.motionX, this.motionY, this.motionZ);
         } else {
             if ((this.particleAge & 3) == 0) {
-                if (this.checkCovered()) {
-                    this.setExpired();
-                } else if (this.checkShouldFall()) {
+                if (this.checkShouldFall()) {
                     this.onGround = false;
                     this.finalQuad = null;
+                } else if (this.checkIsCovered()) {
+                    this.setExpired();
                 }
             }
         }
     }
 
     public boolean checkShouldFall() {
-//        double fallArea = 0.0;
-//        double totalArea = 0.0;
-        if (finalQuad == null || hitNormal == null) {
-            return false;
-        }
-        int falls = 0;
-        for (Vec3d q : finalQuad) {
-            Vec3d posVec = new Vec3d(this.posX + q.x - hitNormal.x, this.posY + q.y - hitNormal.y, this.posZ + q.z - hitNormal.z);
-            BlockPos behind = new BlockPos(posVec);
-            IBlockState block = world.getBlockState(behind);
-//            double ax = Math.abs(posVec.x - this.posX);
-//            double ay = Math.abs(posVec.y - this.posY);
-//            double az = Math.abs(posVec.z - this.posZ);
-//            double area = 1.0;
-//            if (ax >= 0.001) {
-//                area *= ax;
-//            }
-//            if (ay >= 0.001) {
-//                area *= ay;
-//            }
-//            if (az >= 0.001) {
-//                area *= az;
-//            }
-//            totalArea += area;
-//            if (!block.isFullBlock()) {
-//                fallArea += area;
-//            }
-            if (block == null || !block.isFullBlock()) {
-                falls++;
-            }
-        }
-//        return (fallArea / totalArea) >= 0.05;
-        return falls >= 3;
+        this.setBoundingBox(this.getBoundingBox().offset(hitNormal.scale(-1)));
+        boolean collided = world.checkBlockCollision(this.getBoundingBox());
+        this.setBoundingBox(this.getBoundingBox().offset(hitNormal));
+        return !collided;
     }
 
-    public boolean checkCovered() {
-//        double coveredArea = 0.0;
-//        double totalArea = 0.0;
-        if (finalQuad == null || hitNormal == null) {
-            return false;
+    public boolean checkIsCovered() {
+        this.setBoundingBox(this.getBoundingBox().offset(hitNormal));
+        boolean collided = world.checkBlockCollision(this.getBoundingBox());
+        this.setBoundingBox(this.getBoundingBox().offset(hitNormal.scale(-1)));
+        return collided;
+    }
+
+    private static Vec3d floorOrCeilVec3d(Vec3d vec, Vec3d normal) {
+        double sx = Math.signum(normal.x);
+        double sy = Math.signum(normal.y);
+        double sz = Math.signum(normal.z);
+        double x = sx>0 ? Math.floor(vec.x) : (sx==0 ? vec.x : Math.ceil(vec.x));
+        double y = sy>0 ? Math.floor(vec.y) : (sy==0 ? vec.y : Math.ceil(vec.y));
+        double z = sz>0 ? Math.floor(vec.z) : (sz==0 ? vec.z : Math.ceil(vec.z));
+        return new Vec3d(x, y, z);
+    }
+    private void computeVertexOverhang() {
+        if (!this.canCollide) {
+            return;
         }
-        int covered = 0;
-        for (Vec3d q : finalQuad) {
-            Vec3d posVec = new Vec3d(this.posX + q.x + hitNormal.x * 0.5, this.posY + q.y + hitNormal.y * 0.5, this.posZ + q.z + hitNormal.z * 0.5);
-            BlockPos above = new BlockPos(posVec);
-            IBlockState block = world.getBlockState(above);
-//            double ax = Math.abs(posVec.x - this.posX);
-//            double ay = Math.abs(posVec.y - this.posY);
-//            double az = Math.abs(posVec.z - this.posZ);
-//            double area = 1.0;
-//            if (ax >= 0.001) {
-//                area *= ax;
-//            }
-//            if (ay >= 0.001) {
-//                area *= ay;
-//            }
-//            if (az >= 0.001) {
-//                area *= az;
-//            }
-//            totalArea += area;
-//            if (block.isFullBlock()) {
-//                coveredArea += area;
-//            }
-            if (block != null && block.isFullBlock()) {
-                covered++;
-            }
+        Vec3d posVec = new Vec3d(posX, posY, posZ).subtract(hitNormal);
+        Vec3d vert0 = finalQuad[0].add(posVec);
+        Vec3d vert1 = finalQuad[1].add(posVec);
+        Vec3d vert2 = finalQuad[2].add(posVec);
+        Vec3d vert3 = finalQuad[3].add(posVec);
+        boolean vert0attached = false;
+        boolean vert1attached = false;
+        boolean vert2attached = false;
+        boolean vert3attached = false;
+        for (AxisAlignedBB box : worldCollisionBoxes) {
+            vert0attached |= box.contains(vert0);
+            vert1attached |= box.contains(vert1);
+            vert2attached |= box.contains(vert2);
+            vert3attached |= box.contains(vert3);
         }
-//        return (coveredArea / totalArea) >= 0.05;
-        return covered > 0;
+        Vec3d[] orig = finalQuad.clone();
+        if (!vert0attached) {
+            finalQuad[0] = floorOrCeilVec3d(finalQuad[0], hitNormal);
+            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 0 to " + finalQuad[0]);
+        }
+        if (!vert1attached) {
+            finalQuad[1] = floorOrCeilVec3d(finalQuad[1], hitNormal);
+            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 1 to " + finalQuad[1]);
+        }
+        if (!vert2attached) {
+            finalQuad[2] = floorOrCeilVec3d(finalQuad[2], hitNormal);
+            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 2 to " + finalQuad[2]);
+        }
+        if (!vert3attached) {
+            finalQuad[3] = floorOrCeilVec3d(finalQuad[3], hitNormal);
+            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 3 to " + finalQuad[3]);
+        }
+//        finalUVs = new Vec2f[4];
+//        for (int i=0; i<finalUVs.length; i++) {
+//            if (hitNormal.x == 0) {
+//                if (hitNormal.y == 0) {
+//                    finalUVs[i] = new Vec2f((float)finalQuad[i].x, (float)finalQuad[i].y);
+//                } else if (hitNormal.z == 0) {
+//                    finalUVs[i] = new Vec2f((float)finalQuad[i].x, (float)finalQuad[i].z);
+//                }
+//            } else if (hitNormal.y == 0) {
+//                finalUVs[i] = new Vec2f((float)finalQuad[i].y, (float)finalQuad[i].z);
+//            }
+//            finalUVs[i] = new Vec2f(
+//                    (finalUVs[i].x - (float)orig[i].x) / particleTextureWidth,
+//                    finalUVs[i].y - (float)orig[i].y
+//            );
+//        }
     }
 
     @Override
     public void move(double dx, double dy, double dz) {
-        RayTraceResult result = world.rayTraceBlocks(new Vec3d(posX, posY, posZ), new Vec3d(dx, dy, dz).normalize());
-        setPosition(posX+dx, posY+dy, posZ+dz);
-        if (result == null) {
-            return;
+        double origX = dx;
+        double origY = dy;
+        double origZ = dz;
+        if (this.canCollide && world != null) {
+            AxisAlignedBB bb = this.getBoundingBox();
+            worldCollisionBoxes = world.getCollisionBoxes(null, bb.expand(dx, dy, dz));
+            for(AxisAlignedBB axisalignedbb : worldCollisionBoxes) {
+                dy = axisalignedbb.calculateYOffset(bb, dy);
+            }
+            this.setBoundingBox(bb.offset(0, dy, 0));
+            bb = this.getBoundingBox();
+            for(AxisAlignedBB axisalignedbb : worldCollisionBoxes) {
+                dx = axisalignedbb.calculateXOffset(bb, dx);
+            }
+            this.setBoundingBox(bb.offset(dx, 0, 0));
+            bb = this.getBoundingBox();
+            for(AxisAlignedBB axisalignedbb : worldCollisionBoxes) {
+                dz = axisalignedbb.calculateZOffset(bb, dz);
+            }
+            this.setBoundingBox(bb.offset(0, 0, dz));
+        } else {
+            this.setBoundingBox(this.getBoundingBox().offset(dx, dy, dz));
         }
 
-//        List<AxisAlignedBB> list = this.world.getCollisionBoxes(null, this.getBoundingBox().expand(xx, yy, zz));
-//
-//
-//        for(AxisAlignedBB axisalignedbb : list) {
-//            yy = axisalignedbb.calculateYOffset(this.getBoundingBox(), yy);
-//        }
-//
-//        this.setBoundingBox(this.getBoundingBox().offset(0.0, yy, 0.0));
-//
-//        for(AxisAlignedBB axisalignedbb : list) {
-//            xx = axisalignedbb.calculateXOffset(this.getBoundingBox(), xx);
-//        }
-//
-//        this.setBoundingBox(this.getBoundingBox().offset(xx, 0.0, 0.0));
-//
-//        for(AxisAlignedBB axisalignedbb : list) {
-//            zz = axisalignedbb.calculateZOffset(this.getBoundingBox(), zz);
-//        }
-//
-//        this.setBoundingBox(this.getBoundingBox().offset(0.0F, 0.0, zz));
+        this.resetPositionToBB();
 
-
-
-//        this.resetPositionToBB();
-//        this.onGround = Math.abs(dx)<EPSILON && Math.abs(dy)<EPSILON && Math.abs(dz)<EPSILON;
-        if (world.checkBlockCollision(this.getBoundingBox())) {
-            BlockPos pos = result.getBlockPos();
-            switch (result.sideHit) {
-                case NORTH:
-                case SOUTH:
-                    this.hitNormal = new Vec3d(0.0, 0.0, -Math.signum(dz));
-                    this.posZ = pos.getZ() + (dz >= 0 ? 0 : 1);
-                    this.posZ -= 0.0025 * Math.signum(dz) * (0.8f + 0.4f * rand.nextFloat());
-                    break;
-                case EAST:
-                case WEST:
-                    this.hitNormal = new Vec3d(-Math.signum(dx), 0.0, 0.0);
-                    this.posX = pos.getX() + (dx >= 0 ? 0 : 1);
-                    this.posX -= 0.0025 * Math.signum(dx) * (0.8f + 0.4f * rand.nextFloat());
-                    break;
-                case UP:
-                default:
-                    this.hitNormal = new Vec3d(0.0, -Math.signum(dy), 0.0);
-                    this.posY = pos.getY() + (dy >= 0 ? 0 : 1);
-                    this.posY -= 0.0025 * Math.signum(dy) * (0.6f + 0.4f * rand.nextFloat());
-                    break;
+        if (origX != dx || origY != dy || origZ != dz) {
+            BlockPos pos = new BlockPos(posX, posY, posZ);
+            if (origY != dy) {
+                this.hitNormal = new Vec3d(0.0, -Math.signum(origY), 0.0);
+                this.posY = pos.getY() + (origY < 0 ? 0 : 1);
+                this.facing = (origY < 0 ? EnumFacing.DOWN : EnumFacing.UP);
+                this.finalQuad = ParticleHelper.getAxisAlignedQuad(facing, this.particleScale * this.width);
+//                this.computeVertexOverhang();
+                this.posY -= 0.0025 * Math.signum(origY) * (0.6f + 0.4f * rand.nextFloat());
+//                SplatterizerMod.LOGGER.log(Level.INFO, "Floor position: " + new Vec3d(this.posX, this.posY, this.posZ));
+            } else if (origX != dx) {
+                this.hitNormal = new Vec3d(-Math.signum(origX), 0.0, 0.0);
+                this.posX = pos.getX() + (origX < 0 ? 0 : 1);
+                this.facing = (origX < 0 ? EnumFacing.WEST : EnumFacing.EAST);
+                this.finalQuad = ParticleHelper.getAxisAlignedQuad(facing, this.particleScale * this.width);
+//                this.computeVertexOverhang();
+                this.posX -= 0.0025 * Math.signum(origX) * (0.6f + 0.4f * rand.nextFloat());
+//                SplatterizerMod.LOGGER.log(Level.INFO, "Wall X position: " + new Vec3d(this.posX, this.posY, this.posZ));
+            } else if (origZ != dz) {
+                this.hitNormal = new Vec3d(0.0, 0.0, -Math.signum(origZ));
+                this.posZ = pos.getZ() + (origZ < 0 ? 0 : 1);
+                this.facing = (origZ < 0 ? EnumFacing.NORTH : EnumFacing.SOUTH);
+                this.finalQuad = ParticleHelper.getAxisAlignedQuad(facing, this.particleScale * this.width);
+//                this.computeVertexOverhang();
+                this.posZ -= 0.0025 * Math.signum(origZ) * (0.6f + 0.4f * rand.nextFloat());
+//                SplatterizerMod.LOGGER.log(Level.INFO, "Wall Z position: " + new Vec3d(this.posX, this.posY, this.posZ));
+            } else {
+                return;
             }
             this.onGround = true;
             this.motionX = motionY = motionZ = 0.0;
@@ -220,5 +236,7 @@ public class SplatterParticleBase extends Particle {
             this.prevPosY = posY;
             this.prevPosZ = posZ;
         }
+
     }
+
 }

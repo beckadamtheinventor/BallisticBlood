@@ -2,6 +2,7 @@ package com.beckadam.splatterizer.particles;
 
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
 import com.beckadam.splatterizer.helpers.ParticleHelper;
+import com.beckadam.splatterizer.particles.types.BloodSubParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
@@ -11,15 +12,15 @@ import net.minecraft.entity.Entity;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 
 public class SplatterParticle extends SplatterParticleBase {
-    protected LinkedList<SplatterSubParticle> subParticles;
+    protected ArrayList<SplatterSubParticle> subParticles;
 
     public SplatterParticle(World world, double x, double y, double z, double vx, double vy, double vz) {
         super(world, x, y, z, vx, vy, vz);
-        subParticles = new LinkedList<>();
+        subParticles = new ArrayList<>();
     }
 
     public void addSubparticle(SplatterSubParticle particle) {
@@ -27,6 +28,7 @@ public class SplatterParticle extends SplatterParticleBase {
             subParticles.add(particle);
         }
     }
+
 
     @Override
     public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
@@ -45,26 +47,17 @@ public class SplatterParticle extends SplatterParticleBase {
         int i = this.getBrightnessForRender(partialTicks);
         int j = (i >> 16) & 65535;
         int k = i & 65535;
-        float w = particleScale * this.width * (this.onGround ? 1.5f : 1.0f);
-
-        GlStateManager.enableBlend();
-        GlStateManager.enableNormalize();
-        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-//        GlStateManager.disableLighting();
+        float w = particleScale * this.width;
 
 
         Vec3d[] quad;
-        float ipx = (float)(player.prevPosX + (player.posX - player.prevPosX) * partialTicks);
-        float ipy = (float)(player.prevPosY + (player.posY - player.prevPosY) * partialTicks);
-        float ipz = (float)(player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks);
+        ipx = (float)(player.prevPosX + (player.posX - player.prevPosX) * partialTicks);
+        ipy = (float)(player.prevPosY + (player.posY - player.prevPosY) * partialTicks);
+        ipz = (float)(player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks);
         double px = (this.prevPosX + (this.posX - this.prevPosX) * partialTicks - ipx);
         double py = (this.prevPosY + (this.posY - this.prevPosY) * partialTicks - ipy);
         double pz = (this.prevPosZ + (this.posZ - this.prevPosZ) * partialTicks - ipz);
-        if (this.onGround) {
-            if (this.finalQuad == null) {
-                this.finalQuad = ParticleHelper.getAxisAlignedQuad(this.hitNormal, w);
-//                SplatterizerMod.LOGGER.log(Level.INFO, "Setting particle to Normal Axis Aligned on wall/floor: " + this.hitNormal.toString());
-            }
+        if (this.onGround && this.finalQuad != null) {
             quad = finalQuad;
             Minecraft.getMinecraft().getTextureManager().bindTexture(SPLATTER_DECAL_TEXTURE);
         } else {
@@ -82,12 +75,25 @@ public class SplatterParticle extends SplatterParticleBase {
         float u1 = u0 + 1.0f / particleTextureWidth;
         float v1 = 1.0f;
 
+        GlStateManager.enableBlend();
+        GlStateManager.enableNormalize();
+        GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
+//        GlStateManager.disableLighting();
+
 //        GL11.glPushMatrix();
         buffer.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
-        buffer.pos(px + quad[0].x, py + quad[0].y, pz + quad[0].z).tex(u1, v1).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
-        buffer.pos(px + quad[1].x, py + quad[1].y, pz + quad[1].z).tex(u1, v0).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
-        buffer.pos(px + quad[2].x, py + quad[2].y, pz + quad[2].z).tex(u0, v0).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
-        buffer.pos(px + quad[3].x, py + quad[3].y, pz + quad[3].z).tex(u0, v1).color(1, 1, 1, alpha).lightmap(j, k).endVertex();
+        buffer.pos(px + quad[0].x, py + quad[0].y, pz + quad[0].z)
+                .tex(finalUVs[0].x+u1, finalUVs[0].y+v1)
+                .color(1, 1, 1, alpha).lightmap(j, k).endVertex();
+        buffer.pos(px + quad[1].x, py + quad[1].y, pz + quad[1].z)
+                .tex(finalUVs[1].x+u1, finalUVs[1].y+v0)
+                .color(1, 1, 1, alpha).lightmap(j, k).endVertex();
+        buffer.pos(px + quad[2].x, py + quad[2].y, pz + quad[2].z)
+                .tex(finalUVs[2].x+u0, finalUVs[2].y+v0)
+                .color(1, 1, 1, alpha).lightmap(j, k).endVertex();
+        buffer.pos(px + quad[3].x, py + quad[3].y, pz + quad[3].z)
+                .tex(finalUVs[3].x+u0, finalUVs[3].y+v1)
+                .color(1, 1, 1, alpha).lightmap(j, k).endVertex();
         Tessellator.getInstance().draw();
         if (!this.subParticles.isEmpty()) {
             buffer.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
@@ -106,9 +112,7 @@ public class SplatterParticle extends SplatterParticleBase {
         super.onUpdate();
         for (SplatterParticleBase sub : this.subParticles) {
             sub.onUpdate();
-            if (!sub.isAlive()) {
-                this.subParticles.remove(sub);
-            }
         }
+        this.subParticles.removeIf(splatterSubParticle -> !splatterSubParticle.isAlive());
     }
 }
