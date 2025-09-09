@@ -11,7 +11,7 @@ public class AttackEntityFromHandler {
         SplatterizerMod.PROXY.AttackEntityFromHandler(event.getEntity(), event.getSource(), event.getAmount());
     }
 
-    public static void init(EventBus eventBus) {
+    public static void register(EventBus eventBus) {
         eventBus.register(AttackEntityFromHandler.class);
     }
 }

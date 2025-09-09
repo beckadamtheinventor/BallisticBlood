@@ -1,5 +1,6 @@
 package com.beckadam.splatterizer.particles;
 
+import com.beckadam.splatterizer.helpers.ParticleClientHelper;
 import com.beckadam.splatterizer.helpers.ParticleHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
@@ -14,15 +15,19 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
+@SideOnly(Side.CLIENT)
 public class SplatterParticleBase extends Particle {
     protected ResourceLocation splatterParticleTexture;
     protected GlStateManager.SourceFactor blendSourceFactor = GlStateManager.SourceFactor.SRC_ALPHA;
     protected GlStateManager.DestFactor blendDestFactor = GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA;
+    protected boolean lightingEnabled = true;
     protected static int fadeStart;
     protected static final float particleTextureWidth = 4.0f;
     protected static final float particleTextureHeight = 4.0f;
@@ -42,6 +47,7 @@ public class SplatterParticleBase extends Particle {
 
     protected static EntityPlayerSP player;
     protected static float ipx, ipy, ipz;
+    boolean allowSubparticles;
 
 
     //    protected Vec3d facing;
@@ -64,12 +70,16 @@ public class SplatterParticleBase extends Particle {
         splatterParticleTexture = null;
         player = Minecraft.getMinecraft().player;
         this.impactEmissionRate = this.projectileEmissionRate = this.decalEmissionRate = 0;
+        allowSubparticles = true;
+    }
+
+    public void setAllowSubparticles(boolean allow) {
+        allowSubparticles = allow;
     }
 
     public void addSubparticle(SplatterParticle particle) {
-        if (subParticles.size() < ForgeConfigHandler.client.particleSubMax) {
-            subParticles.add(particle);
-        }
+        particle.setAllowSubparticles(true);
+        subParticles.add(particle);
     }
 
     public void setTexture(ResourceLocation tex) {
@@ -80,9 +90,10 @@ public class SplatterParticleBase extends Particle {
         particleGravity = g;
     }
 
-    public void setBlendFactors(GlStateManager.SourceFactor source, GlStateManager.DestFactor dest) {
+    public void setBlendFactors(GlStateManager.SourceFactor source, GlStateManager.DestFactor dest, boolean light) {
         blendSourceFactor = source;
         blendDestFactor = dest;
+        lightingEnabled = light;
     }
 
     public void setType(int type) {
@@ -122,7 +133,7 @@ public class SplatterParticleBase extends Particle {
         if (!this.subParticles.isEmpty()) {
             float alpha = 1.0f;
             if (this.particleAge >= fadeStart) {
-                alpha -= ((float)(this.particleAge - fadeStart) / (this.particleMaxAge - fadeStart));
+                alpha -= ((float)(this.particleAge - fadeStart) / (float)(this.particleMaxAge - fadeStart));
             }
             ipx = (float)(player.prevPosX + (player.posX - player.prevPosX) * partialTicks);
             ipy = (float)(player.prevPosY + (player.posY - player.prevPosY) * partialTicks);
@@ -131,12 +142,17 @@ public class SplatterParticleBase extends Particle {
             GlStateManager.enableBlend();
             GlStateManager.enableNormalize();
             GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
+            if (lightingEnabled) {
+                GlStateManager.enableLighting();
+            } else {
+                GlStateManager.disableLighting();
+            }
 
+            Minecraft.getMinecraft().getTextureManager().bindTexture(splatterParticleTexture);
             for (ParticleSubType type : ParticleSubType.values()) {
                 if (type == ParticleSubType.BASE) {
                     continue;
                 }
-                Minecraft.getMinecraft().getTextureManager().bindTexture(splatterParticleTexture);
                 boolean startedDrawing = false;
                 for (SplatterParticle sub : this.subParticles) {
                     // the alpha of each sub-particle only needs to be set once
@@ -172,44 +188,73 @@ public class SplatterParticleBase extends Particle {
         for (SplatterParticle sub : this.subParticles) {
             sub.onUpdate();
         }
+        if (this.allowSubparticles) {
+            spawnSubParticles(ForgeConfigHandler.client.particleSpreadMax);
+        }
+    }
+
+    protected void spawnSubParticles(int maximum) {
         this.subParticles.removeIf(splatterSubParticle -> !splatterSubParticle.isAlive());
+        if (this.subParticles.size() >= maximum) {
+            return;
+        }
         if (impactEmissionRate > 0 && particleAge % impactEmissionRate == 0) {
-            addSubparticle(SplatterParticleFactory.makeParticle(
+            SplatterParticle particle = ParticleClientHelper.makeParticle(
                     particleType, world, getPositionVector(),
                     getDirectionVector().add(
                             ParticleHelper.GetRandomNormalizedVector()
                                     .scale(particleSubVelocity)
                     )
-            ));
+            );
+            if (particle != null) {
+                particle.setParticleSubType(ParticleSubType.PROJECTILE);
+                addSubparticle(particle);
+            }
         }
         if (projectileEmissionRate > 0 || decalEmissionRate > 0) {
-            ArrayList<SplatterParticle> newParticles = new ArrayList<>();
+//            ArrayList<SplatterParticle> newParticles = new ArrayList<>();
             for (SplatterParticle sub : subParticles) {
+                if (this.subParticles.size() >= maximum) {
+                    break;
+                }
                 if (sub.onGround) {
-                    if (decalEmissionRate > 0 && particleAge % decalEmissionRate == 0) {
-                        newParticles.add(SplatterParticleFactory.makeParticle(
+                    if (decalEmissionRate > 0 && sub.particleAge % decalEmissionRate == 0) {
+                        SplatterParticle particle = ParticleClientHelper.makeParticle(
                                 particleType, world, sub.getPositionVector(),
                                 sub.getDirectionVector().add(
                                         ParticleHelper.GetRandomNormalizedVector()
                                                 .scale(particleSubVelocity)
                                 )
-                        ));
+                        );
+                        if (particle != null) {
+                            particle.setParticleSubType(ParticleSubType.SPRAY);
+                            particle.setAllowSubparticles(false);
+                            sub.addSubparticle(particle);
+//                            newParticles.add(particle);
+                        }
                     }
                 } else if (sub.subType == ParticleSubType.PROJECTILE) {
-                    if (projectileEmissionRate > 0 && particleAge % projectileEmissionRate == 0) {
-                        newParticles.add(SplatterParticleFactory.makeParticle(
+                    if (projectileEmissionRate > 0 && sub.particleAge % projectileEmissionRate == 0) {
+                        SplatterParticle particle = ParticleClientHelper.makeParticle(
                                 particleType, world, sub.getPositionVector(),
                                 sub.getDirectionVector().add(
                                         ParticleHelper.GetRandomNormalizedVector()
                                                 .scale(particleSubVelocity)
                                 )
-                        ));
+                        );
+                        if (particle != null) {
+                            particle.setParticleSubType(ParticleSubType.SPRAY);
+                            particle.setAllowSubparticles(false);
+                            sub.addSubparticle(particle);
+//                            newParticles.add(particle);
+                        }
                     }
                 }
             }
-            for (SplatterParticle particle : newParticles) {
-                addSubparticle(particle);
-            }
+//            for (SplatterParticle particle : newParticles) {
+//                particle.setParticleSubType(ParticleSubType.SPRAY);
+//                addSubparticle(particle);
+//            }
         }
     }
 }

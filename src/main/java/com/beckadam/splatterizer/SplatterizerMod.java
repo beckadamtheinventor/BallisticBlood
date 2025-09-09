@@ -1,14 +1,21 @@
 package com.beckadam.splatterizer;
 
 import com.beckadam.splatterizer.handlers.AttackEntityFromHandler;
+import com.beckadam.splatterizer.handlers.SplatterizerReloadCommand;
 import com.beckadam.splatterizer.message.MessageParticleHandler;
 import com.beckadam.splatterizer.particles.ParticleTypeManager;
+import net.minecraft.command.ServerCommandManager;
+import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.client.ClientCommandHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.Instance;
 import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -33,13 +40,19 @@ public class SplatterizerMod {
 	
 	@Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        AttackEntityFromHandler.init(MinecraftForge.EVENT_BUS);
+        AttackEntityFromHandler.register(MinecraftForge.EVENT_BUS);
         networkWrapperInstance.registerMessage(
                 MessageParticleHandler.MessageParticleFX.Handler.class,
                 MessageParticleHandler.MessageParticleFX.class,
                 0, Side.CLIENT
         );
     }
+
+    @Mod.EventHandler
+    public void serverStartingEvent(FMLServerStartingEvent event) {
+//        event.registerServerCommand(new SplatterizerReloadCommand());
+    }
+
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {

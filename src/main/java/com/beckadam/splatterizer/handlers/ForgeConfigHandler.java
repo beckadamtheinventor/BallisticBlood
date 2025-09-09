@@ -14,7 +14,7 @@ import java.util.Map;
 
 @Config(modid = SplatterizerMod.MODID)
 public class ForgeConfigHandler {
-	
+
 	@Config.Comment("Server-Side Options")
 	@Config.Name("Server Options")
 	public static final ServerConfig server = new ServerConfig();
@@ -27,7 +27,6 @@ public class ForgeConfigHandler {
     public static HashMap<String, ParticleConfig> particleConfigMap;
     @Config.Ignore
     public static HashMap<Integer, ParticleConfig> particleConfigIntMap;
-
 
     public static class ServerConfig {
         @Config.Name("Entity splatter types")
@@ -51,11 +50,11 @@ public class ForgeConfigHandler {
         @Config.Comment("name=texture.png,size,gravity,velocity,blendMode,impactEmissionRate,projectileEmissionRate,decalEmissionRate,emissionVelocity")
         @Config.Name("Particle Configuration")
         public String[] particleConfig = new String[] {
-                "BLOOD=textures/particle/blood_particle.png,1,1,1,MULTIPLY,4,0,4,1",
-                "DUST=textures/particle/dust_particle.png,1,0.2,0.4,NORMAL,8,0,0,0.1",
-                "ASH=textures/particle/ash_particle.png,1,0.2,0.4,NORMAL,8,0,0,0.1",
-                "SLIME=textures/particle/slime_particle.png,1,1,1.2,LIGHTEN,4,0,4,1",
-                "ENDER=textures/particle/ender_particle.png,1,1,1,SRC_ALPHA:SRC_COLOR,4,0,4,0.5",
+                "BLOOD=textures/particle/blood_particle.png,1,1,1,MULTIPLY,4,8,4,0.25",
+                "DUST=textures/particle/dust_particle.png,1,0.1,0.4,SRC_ALPHA:ONE,0,0,0,0.025",
+                "ASH=textures/particle/ash_particle.png,1,0.1,0.4,NORMAL,0,0,0,0.025",
+                "SLIME=textures/particle/slime_particle.png,0.8,1,1.2,ONE:ONE_MINUS_SRC_COLOR:BRIGHT,4,10,4,0.3",
+                "ENDER=textures/particle/ender_particle.png,1,1,1,SRC_ALPHA:SRC_COLOR,4,0,4,0.25",
         };
 
     }
@@ -83,15 +82,15 @@ public class ForgeConfigHandler {
         @Config.Name("Enable/Disable splatter particles")
         public boolean enableSplatterParticles = true;
 
-        @Config.Comment("Particles emitted is scaled by the damage of the attack and the health of the entity")
+        @Config.Comment("Particles emitted is this number plus the damage of the attack times the extra particles per heart of damage")
         @Config.Name("Number of particles to emit each time a splatter is triggered")
-        public int particleSpreadCount = 8;
+        public int particleSpreadCount = 1;
 
         @Config.Name("Maximum primary particles per splatter")
         public int particleSpreadMax = 24;
 
-        @Config.Name("Maximum secondary particles per splatter")
-        public int particleSubMax = 31;
+        @Config.Name("Maximum secondary particles per primary particle")
+        public int particleSubMax = 4;
 
         @Config.Name("Extra particles per heart of damage")
         public float extraParticlesPerHeartOfDamage = 0.25f;
@@ -163,12 +162,17 @@ public class ForgeConfigHandler {
                 continue;
             }
             int num = SplatterizerMod.particleTypes.add(a[0]);
-            ParticleConfig conf = new ParticleConfig(
-                    num, a[0], a2[0], Float.parseFloat(a2[1]), Float.parseFloat(a2[2]), Float.parseFloat(a2[3]), a2[4],
-                    Integer.parseInt(a2[5]), Integer.parseInt(a2[6]), Integer.parseInt(a2[7]), Float.parseFloat(a2[8])
-            );
-            particleConfigMap.put(a[0], conf);
-            particleConfigIntMap.put(num, conf);
+            try {
+                ParticleConfig conf = new ParticleConfig(
+                        num, a[0], a2[0], Float.parseFloat(a2[1]), Float.parseFloat(a2[2]), Float.parseFloat(a2[3]), a2[4],
+                        Integer.parseInt(a2[5]), Integer.parseInt(a2[6]), Integer.parseInt(a2[7]), Float.parseFloat(a2[8])
+                );
+                particleConfigMap.put(a[0], conf);
+                particleConfigIntMap.put(num, conf);
+            } catch (Exception err) {
+                SplatterizerMod.LOGGER.log(Level.ERROR, "Failed to parse particle type config: \"" + s + "\"");
+                continue;
+            }
             SplatterizerMod.LOGGER.log(Level.INFO, s);
         }
         if (server.entitySplatterTypeMap == null) {

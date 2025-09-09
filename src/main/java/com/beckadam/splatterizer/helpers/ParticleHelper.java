@@ -10,6 +10,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+import org.apache.logging.log4j.Level;
 
 import java.util.Random;
 
@@ -34,16 +35,16 @@ public class ParticleHelper {
     }
 
     public static Vec3d getParticlePosition(Entity target, Entity source) {
-        AxisAlignedBB box = target.getCollisionBoundingBox();
-        if (box != null) {
-            RayTraceResult rt = box.calculateIntercept(
-                    source.getPositionVector(),
-                    source.getPositionVector()
-                            .add(source.getLookVec().scale(32.0))
-            );
-            if (rt != null) {
-                return rt.hitVec;
-            }
+        AxisAlignedBB box = target.getEntityBoundingBox();
+//        SplatterizerMod.LOGGER.log(Level.INFO, "Source Look Vector: " + source.getLookVec());
+        RayTraceResult rt = box.calculateIntercept(
+                source.getPositionVector().add(0.0, source.getEyeHeight(), 0.0),
+                source.getPositionVector()
+                        .add(source.getLookVec().scale(32.0))
+        );
+        if (rt != null) {
+//            SplatterizerMod.LOGGER.log(Level.INFO, "Hit Vector: " + rt.hitVec);
+            return rt.hitVec;
         }
         return target.getPositionVector();
     }
@@ -67,7 +68,7 @@ public class ParticleHelper {
     }
 
     public static int scaleCountByDamage(int count, float amount) {
-        return (int)(count * (1.0f + ForgeConfigHandler.client.extraParticlesPerHeartOfDamage * amount));
+        return (int)(count + ForgeConfigHandler.client.extraParticlesPerHeartOfDamage * amount);
     }
 
     private static Vec3d getVertexOnCircleFacingDirection(Vec3d direction, int index, int total, double radius, double vertical_radius) {

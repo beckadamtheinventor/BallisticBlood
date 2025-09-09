@@ -17,7 +17,7 @@ public class BlendModeHelper {
             String[] modes = mode.split(":");
             try {
                 return GlStateManager.SourceFactor.valueOf(modes[0]);
-            } catch (IllegalArgumentException e) {
+            } catch (Exception e) {
                 return null;
             }
         }
@@ -34,10 +34,21 @@ public class BlendModeHelper {
             String[] modes = mode.split(":");
             try {
                 return GlStateManager.DestFactor.valueOf(modes[1]);
-            } catch (IllegalArgumentException e) {
+            } catch (Exception e) {
                 return null;
             }
         }
         return null;
+    }
+    public static boolean getShouldLight(String mode) {
+        if (mode.contains(":")) {
+            String[] modes = mode.split(":");
+            try {
+                return !modes[2].equalsIgnoreCase("BRIGHT");
+            } catch (Exception e) {
+                return true;
+            }
+        }
+        return true;
     }
 }
