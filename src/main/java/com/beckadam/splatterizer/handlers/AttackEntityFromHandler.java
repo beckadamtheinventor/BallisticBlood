@@ -1,7 +1,6 @@
 package com.beckadam.splatterizer.handlers;
 
 import com.beckadam.splatterizer.SplatterizerMod;
-import net.minecraft.world.World;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.fml.common.eventhandler.EventBus;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;

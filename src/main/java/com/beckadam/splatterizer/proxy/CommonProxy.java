@@ -3,7 +3,6 @@ package com.beckadam.splatterizer.proxy;
 import com.beckadam.splatterizer.SplatterizerMod;
 import com.beckadam.splatterizer.helpers.ParticleHelper;
 import com.beckadam.splatterizer.message.MessageParticleHandler;
-import com.beckadam.splatterizer.particles.ParticleType;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.math.Vec3d;
@@ -15,7 +14,7 @@ public class CommonProxy {
 
     public void AttackEntityFromHandler(Entity entity, DamageSource source, float amount) {
 //        SplatterizerMod.LOGGER.log(Level.INFO, "CommonProxy.AttackEntityFromHandler");
-        ParticleType particleType = ParticleHelper.getParticleTypeForEntity(entity);
+        int particleType = ParticleHelper.getParticleTypeForEntity(entity);
         // Spawn particles of particleType using position, velocity (scaled by damage amount)
         SplatterizerMod.PROXY.sendMessageParticle(
                 entity.dimension, particleType,
@@ -25,7 +24,7 @@ public class CommonProxy {
         );
     }
 
-    public void sendMessageParticle(int dimension, ParticleType type, Vec3d position, Vec3d direction, float damage) {
+    public void sendMessageParticle(int dimension, int type, Vec3d position, Vec3d direction, float damage) {
         MessageParticleHandler.MessageParticleFX message =
                 new MessageParticleHandler.MessageParticleFX(type, position, direction, damage);
         networkWrapperInstance.sendToAllAround(message, new NetworkRegistry.TargetPoint(dimension, position.x, position.y, position.z, 128.0));

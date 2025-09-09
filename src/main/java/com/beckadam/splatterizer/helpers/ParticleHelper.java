@@ -1,7 +1,7 @@
 package com.beckadam.splatterizer.helpers;
 
+import com.beckadam.splatterizer.SplatterizerMod;
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import com.beckadam.splatterizer.particles.ParticleType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.util.DamageSource;
@@ -16,19 +16,20 @@ import java.util.Random;
 public class ParticleHelper {
     // TODO: Make the seed not constant
     public static final Random random = new Random(133742069);
-    public static ParticleType getParticleTypeForEntity(Entity entity) {
+    public static int getParticleTypeForEntity(Entity entity) {
         if (ForgeConfigHandler.server.entitySplatterTypeMap == null) {
-            ForgeConfigHandler.ParseSplatterTypes();
+            ForgeConfigHandler.ParseSplatterizerConfig();
         }
         ResourceLocation rl = EntityList.getKey(entity);
         try {
             if (ForgeConfigHandler.server.entitySplatterTypeMap.containsKey(rl)) {
-                return ParticleType.valueOf(ForgeConfigHandler.server.entitySplatterTypeMap.get(rl));
+                return ForgeConfigHandler.server.entitySplatterTypeMap.get(rl);
             } else {
-                return ParticleType.valueOf(ForgeConfigHandler.server.entitySplatterTypeDefault);
+                String s = ForgeConfigHandler.server.entitySplatterTypeDefault;
+                return SplatterizerMod.particleTypes.get(s);
             }
         } catch (Exception e) {
-            return ParticleType.BLOOD;
+            return 0;
         }
     }
 
@@ -157,5 +158,9 @@ public class ParticleHelper {
             return dir.add(offset.scale(spread * r2));
         }
         return dir;
+    }
+
+    public static Vec3d GetRandomNormalizedVector() {
+        return new Vec3d(random.nextFloat(), random.nextFloat(), random.nextFloat()).normalize();
     }
 }
