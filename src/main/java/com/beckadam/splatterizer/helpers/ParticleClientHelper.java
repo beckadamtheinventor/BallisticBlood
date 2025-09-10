@@ -3,6 +3,7 @@ package com.beckadam.splatterizer.helpers;
 import com.beckadam.splatterizer.SplatterizerMod;
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
 import com.beckadam.splatterizer.particles.*;
+import com.beckadam.splatterizer.render.SplatterParticleRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.math.Vec3d;
@@ -34,41 +35,41 @@ public class ParticleClientHelper {
         double spreadVariance = ForgeConfigHandler.client.particleSpreadVariance;
         int count = Math.min(
                 ForgeConfigHandler.client.particleSpreadMax,
-                ParticleHelper.scaleCountByDamage(ForgeConfigHandler.client.particleSpreadCount, damage)
+                ParticleHelper.ScaleCountByDamage(ForgeConfigHandler.client.particleSpreadCount, damage)
         );
         if (count <= 0) {
             return;
         }
-        GlStateManager.SourceFactor srcFactor = BlendModeHelper.getSourceFactor(cfg.blendMode);
-        GlStateManager.DestFactor destFactor = BlendModeHelper.getDestFactor(cfg.blendMode);
-        boolean lightingEnabled = BlendModeHelper.getShouldLight(cfg.blendMode);
+        GlStateManager.SourceFactor srcFactor = BlendModeHelper.getSourceFactor(cfg.blendMode[0]);
+        GlStateManager.DestFactor destFactor = BlendModeHelper.getDestFactor(cfg.blendMode[1]);
+        int blendOp = BlendModeHelper.getBlendFunction(cfg.blendMode[2]);
+        boolean lightingEnabled = BlendModeHelper.getShouldLight(cfg.blendMode[3]);
+        SplatterizerMod.LOGGER.log(Level.INFO, "srcFactor: " + cfg.blendMode[0] + ", destFactor: " + cfg.blendMode[1] + ", blendOp: " + cfg.blendMode[2] + ", lighting: " + cfg.blendMode[3]);
+
         SplatterParticleBase mainParticle = makeParticleBase(cfg.type, world, position, Vec3d.ZERO);
         if (mainParticle != null) {
             mainParticle.setParticleSubType(ParticleSubType.IMPACT);
-            mainParticle.setBlendFactors(srcFactor, destFactor, lightingEnabled);
-            mainParticle.setEmissionRates(
-                    cfg.impactEmissionRate, cfg.projectileEmissionRate, cfg.decalEmissionRate
-            );
-            mainParticle.setEmissionVelocity(cfg.emissionVelocity);
+            mainParticle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
+            mainParticle.setEmissionRates(cfg.impactEmissionRate);
+            mainParticle.setEmissionVelocity(cfg.impactEmissionVelocity);
             for (int index = 0; index < count; index++) {
-                Vec3d dir = ParticleHelper.SpreadParticleVelocity(direction, index, count, spreadVariance, spreadSize);
+                Vec3d dir = ParticleHelper.GetProjectileParticleVelocity(direction, index, count, spreadVariance, spreadSize);
                 SplatterParticle part = makeParticle(cfg.type, world, position, dir);
                 if (part != null) {
                     part.setParticleSubType(ParticleSubType.PROJECTILE);
-                    part.setBlendFactors(srcFactor, destFactor, lightingEnabled);
+                    part.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
                     mainParticle.addSubparticle(part);
                 }
-                Vec3d randDir = new Vec3d(
-                        random.nextFloat() - 0.5f, random.nextFloat() - 0.5f, random.nextFloat() - 0.5f
-                ).normalize();
-                SplatterParticle part2 = makeParticle(cfg.type, world, position, randDir);
-                if (part2 != null) {
-                    part2.setParticleSubType(ParticleSubType.SPRAY);
-                    part2.setBlendFactors(srcFactor, destFactor, lightingEnabled);
-                    mainParticle.addSubparticle(part2);
-                }
+//                Vec3d randDir = ParticleHelper.GetRandomNormalizedVector()
+//                        .scale(ForgeConfigHandler.client.sprayParticleVelocity);
+//                SplatterParticle part2 = makeParticle(cfg.type, world, position, randDir);
+//                if (part2 != null) {
+//                    part2.setParticleSubType(ParticleSubType.SPRAY);
+//                    part2.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
+//                    mainParticle.addSubparticle(part2);
+//                }
             }
-            Minecraft.getMinecraft().effectRenderer.addEffect(mainParticle);
+            SplatterParticleRenderer.add(mainParticle);
         }
     }
 

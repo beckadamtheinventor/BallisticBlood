@@ -17,7 +17,7 @@ import java.util.Random;
 public class ParticleHelper {
     // TODO: Make the seed not constant
     public static final Random random = new Random(133742069);
-    public static int getParticleTypeForEntity(Entity entity) {
+    public static int GetParticleTypeForEntity(Entity entity) {
         if (ForgeConfigHandler.server.entitySplatterTypeMap == null) {
             ForgeConfigHandler.ParseSplatterizerConfig();
         }
@@ -34,13 +34,23 @@ public class ParticleHelper {
         }
     }
 
-    public static Vec3d getParticlePosition(Entity target, Entity source) {
+    public static Vec3d GetParticlePosition(Entity target, DamageSource source) {
+        Entity sourceEntity = source.getImmediateSource();
+        if (sourceEntity == null) {
+            sourceEntity = source.getTrueSource();
+        }
+        if (sourceEntity == null) {
+            return target.getPositionVector();
+        }
+        if (source.isProjectile()) {
+            return sourceEntity.getPositionVector();
+        }
         AxisAlignedBB box = target.getEntityBoundingBox();
 //        SplatterizerMod.LOGGER.log(Level.INFO, "Source Look Vector: " + source.getLookVec());
         RayTraceResult rt = box.calculateIntercept(
-                source.getPositionVector().add(0.0, source.getEyeHeight(), 0.0),
-                source.getPositionVector()
-                        .add(source.getLookVec().scale(32.0))
+                sourceEntity.getPositionVector().add(0.0, sourceEntity.getEyeHeight(), 0.0),
+                sourceEntity.getPositionVector()
+                        .add(sourceEntity.getLookVec().scale(32.0))
         );
         if (rt != null) {
 //            SplatterizerMod.LOGGER.log(Level.INFO, "Hit Vector: " + rt.hitVec);
@@ -49,7 +59,7 @@ public class ParticleHelper {
         return target.getPositionVector();
     }
 
-    public static Vec3d getParticleVelocity(Vec3d target, DamageSource source) {
+    public static Vec3d GetParticleVelocity(Vec3d target, DamageSource source) {
         Entity sourceEntity = source.getImmediateSource();
         Entity trueSource = source.getTrueSource();
         if (sourceEntity == null || trueSource == null) {
@@ -61,31 +71,16 @@ public class ParticleHelper {
         if (source.isProjectile()) {
             return new Vec3d(sourceEntity.motionX, sourceEntity.motionY, sourceEntity.motionZ);
         } else {
-            return target.subtract(trueSource.getPositionVector()).normalize()
-                    .add(new Vec3d(sourceEntity.motionX, sourceEntity.motionY, sourceEntity.motionZ).scale(2.0f))
-                    .scale(0.4 + random.nextFloat() * 0.2);
+            return trueSource.getPositionVector().subtract(target).normalize()
+                    .add(new Vec3d(trueSource.motionX, trueSource.motionY, trueSource.motionZ).scale(2.0f));
         }
     }
 
-    public static int scaleCountByDamage(int count, float amount) {
-        return (int)(count + ForgeConfigHandler.client.extraParticlesPerHeartOfDamage * amount);
+    public static int ScaleCountByDamage(int count, float amount) {
+        return count + (int)(ForgeConfigHandler.client.extraParticlesPerHeartOfDamage * amount);
     }
 
-    private static Vec3d getVertexOnCircleFacingDirection(Vec3d direction, int index, int total, double radius, double vertical_radius) {
-        double angle = Math.atan2(direction.x, direction.z) + Math.PI * 0.5;
-        double rot = (2.0 * Math.PI * index) / (double)total;
-        double CX = Math.cos(rot);
-        double SX = Math.sin(rot);
-        double CY = Math.cos(angle);
-        double SY = Math.sin(angle);
-        return new Vec3d(
-                radius * (CY*direction.x + SY*direction.z),
-                vertical_radius * (CX*direction.y - SX*direction.z),
-                radius * (-SY*direction.x + CY*direction.z)*(SX*direction.y + CX*direction.z)
-        );
-    }
-
-    public static Vec3d[] getAxisAlignedQuad(EnumFacing dir, double width) {
+    public static Vec3d[] GetAxisAlignedQuad(EnumFacing dir, double width) {
         Vec3d v000 = new Vec3d(-1, -1, -1);
         Vec3d v001 = new Vec3d(-1, -1,  1);
         Vec3d v010 = new Vec3d(-1,  1, -1);
@@ -148,20 +143,22 @@ public class ParticleHelper {
         return new Vec3d[] {};
     }
 
-    public static Vec3d SpreadParticleVelocity(Vec3d dir, int index, int total, double variance, double spread) {
+    public static Vec3d GetProjectileParticleVelocity(Vec3d dir, int index, int total, double variance, double spread) {
         if (total > 1) {
-            double r = (random.nextFloat() - 0.5) * variance;
+            double r = 2.0 * (random.nextFloat() - 0.5) * variance;
             double r2 = random.nextFloat() * variance;
-            double dx = (double)index / (double)total + r - 0.5;
+            double dx = r + 0.5 + spread * ((double)index / (double)total - 0.5);
             double dy = 0.25 * random.nextFloat() - 0.125;
-            double ang = Math.atan2(dir.z, dir.x) + dx * 0.5 * Math.PI;
+            double a0 = Math.atan2(dir.z, dir.x);
+            double ang = a0 + dx * 0.125 * Math.PI;
             Vec3d offset = new Vec3d(Math.cos(ang), dy, Math.sin(ang));
-            return dir.add(offset.scale(spread * r2));
+//            SplatterizerMod.LOGGER.log(Level.INFO, "Direction angle: " + ang + " offset vector: " + offset);
+            return dir.add(offset.scale(r2));
         }
         return dir;
     }
 
     public static Vec3d GetRandomNormalizedVector() {
-        return new Vec3d(random.nextFloat(), random.nextFloat(), random.nextFloat()).normalize();
+        return new Vec3d(random.nextFloat()-0.5, random.nextFloat()-0.5, random.nextFloat()-0.5).normalize();
     }
 }

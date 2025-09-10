@@ -27,12 +27,6 @@ public class SplatterParticle extends SplatterParticleBase {
     }
 
     @Override
-    public void addSubparticle(SplatterParticle particle) {
-        particle.setAllowSubparticles(false);
-        subParticles.add(particle);
-    }
-
-    @Override
     public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
         int i = this.getBrightnessForRender(partialTicks);
         int lx = (i >> 16) & 65535;
@@ -90,6 +84,7 @@ public class SplatterParticle extends SplatterParticleBase {
         if (this.particleAge++ >= this.particleMaxAge) {
             this.setExpired();
         }
+        this.subParticles.removeIf(splatterSubParticle -> !splatterSubParticle.isAlive());
         // move the particle until it hits something
         if (!this.onGround) {
             this.prevPosX = this.posX;
@@ -102,26 +97,25 @@ public class SplatterParticle extends SplatterParticleBase {
                 if (this.checkShouldFall()) {
                     this.onGround = false;
                     this.finalQuad = null;
-                    this.particleTextureIndexY = this.subType.ordinal() - 1;
+                    this.setParticleSubType(this.oldSubType);
                 } else if (this.checkIsCovered()) {
                     this.setExpired();
                 }
             }
         }
-        spawnSubParticles(ForgeConfigHandler.client.particleSubMax);
     }
 
     public boolean checkShouldFall() {
-        this.setBoundingBox(this.getBoundingBox().offset(hitNormal.scale(-1)));
+        this.setBoundingBox(this.getBoundingBox().offset(hitNormal.scale(-0.5)));
         boolean collided = world.checkBlockCollision(this.getBoundingBox());
-        this.setBoundingBox(this.getBoundingBox().offset(hitNormal));
+        this.setBoundingBox(this.getBoundingBox().offset(hitNormal.scale(0.5)));
         return !collided;
     }
 
     public boolean checkIsCovered() {
-        this.setBoundingBox(this.getBoundingBox().offset(hitNormal));
+        this.setBoundingBox(this.getBoundingBox().offset(hitNormal.scale(0.5)));
         boolean collided = world.checkBlockCollision(this.getBoundingBox());
-        this.setBoundingBox(this.getBoundingBox().offset(hitNormal.scale(-1)));
+        this.setBoundingBox(this.getBoundingBox().offset(hitNormal.scale(-0.5)));
         return collided;
     }
 
@@ -134,6 +128,7 @@ public class SplatterParticle extends SplatterParticleBase {
         double z = sz>0 ? Math.floor(vec.z) : (sz==0 ? vec.z : Math.ceil(vec.z));
         return new Vec3d(x, y, z);
     }
+
     private void computeVertexOverhang() {
         if (!this.canCollide) {
             return;
@@ -156,19 +151,19 @@ public class SplatterParticle extends SplatterParticleBase {
         Vec3d[] orig = finalQuad.clone();
         if (!vert0attached) {
             finalQuad[0] = floorOrCeilVec3d(finalQuad[0], hitNormal);
-            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 0 to " + finalQuad[0]);
+//            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 0 to " + finalQuad[0]);
         }
         if (!vert1attached) {
             finalQuad[1] = floorOrCeilVec3d(finalQuad[1], hitNormal);
-            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 1 to " + finalQuad[1]);
+//            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 1 to " + finalQuad[1]);
         }
         if (!vert2attached) {
             finalQuad[2] = floorOrCeilVec3d(finalQuad[2], hitNormal);
-            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 2 to " + finalQuad[2]);
+//            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 2 to " + finalQuad[2]);
         }
         if (!vert3attached) {
             finalQuad[3] = floorOrCeilVec3d(finalQuad[3], hitNormal);
-            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 3 to " + finalQuad[3]);
+//            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 3 to " + finalQuad[3]);
         }
 //        finalUVs = new Vec2f[4];
 //        for (int i=0; i<finalUVs.length; i++) {
@@ -222,7 +217,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.hitNormal = new Vec3d(0.0, -Math.signum(origY), 0.0);
                 this.posY = pos.getY() + (origY < 0 ? 0 : 1);
                 this.facing = (origY < 0 ? EnumFacing.DOWN : EnumFacing.UP);
-                this.finalQuad = ParticleHelper.getAxisAlignedQuad(facing, this.particleScale * this.width);
+                this.finalQuad = ParticleHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
 //                this.computeVertexOverhang();
                 this.posY -= 0.05 * Math.signum(origY) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Floor position: " + new Vec3d(this.posX, this.posY, this.posZ));
@@ -230,7 +225,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.hitNormal = new Vec3d(-Math.signum(origX), 0.0, 0.0);
                 this.posX = pos.getX() + (origX < 0 ? 0 : 1);
                 this.facing = (origX < 0 ? EnumFacing.WEST : EnumFacing.EAST);
-                this.finalQuad = ParticleHelper.getAxisAlignedQuad(facing, this.particleScale * this.width);
+                this.finalQuad = ParticleHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
 //                this.computeVertexOverhang();
                 this.posX -= 0.05 * Math.signum(origX) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Wall X position: " + new Vec3d(this.posX, this.posY, this.posZ));
@@ -238,7 +233,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.hitNormal = new Vec3d(0.0, 0.0, -Math.signum(origZ));
                 this.posZ = pos.getZ() + (origZ < 0 ? 0 : 1);
                 this.facing = (origZ < 0 ? EnumFacing.NORTH : EnumFacing.SOUTH);
-                this.finalQuad = ParticleHelper.getAxisAlignedQuad(facing, this.particleScale * this.width);
+                this.finalQuad = ParticleHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
 //                this.computeVertexOverhang();
                 this.posZ -= 0.05 * Math.signum(origZ) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Wall Z position: " + new Vec3d(this.posX, this.posY, this.posZ));
@@ -246,7 +241,8 @@ public class SplatterParticle extends SplatterParticleBase {
                 return;
             }
             this.onGround = true;
-            this.particleTextureIndexY = ParticleSubType.DECAL.ordinal() - 1;
+            this.oldSubType = this.subType;
+            setParticleSubType(ParticleSubType.DECAL);
             this.motionX = motionY = motionZ = 0.0;
             this.prevPosX = posX;
             this.prevPosY = posY;

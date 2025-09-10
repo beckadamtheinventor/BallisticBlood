@@ -1,5 +1,6 @@
 package com.beckadam.splatterizer.handlers;
 
+
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
@@ -47,14 +48,14 @@ public class ForgeConfigHandler {
         @Config.Ignore
         public Map<ResourceLocation, Integer> entitySplatterTypeMap = null;
 
-        @Config.Comment("name=texture.png,size,gravity,velocity,blendMode,impactEmissionRate,projectileEmissionRate,decalEmissionRate,emissionVelocity")
+        @Config.Comment("name=texture.png,size,gravity,velocity,impactEmissionRate,projectileEmissionRate,decalEmissionRate,emissionVelocity,blendmode(s)")
         @Config.Name("Particle Configuration")
         public String[] particleConfig = new String[] {
-                "BLOOD=textures/particle/blood_particle.png,1,1,1,MULTIPLY,4,8,4,0.25",
-                "DUST=textures/particle/dust_particle.png,1,0.1,0.4,SRC_ALPHA:ONE,0,0,0,0.025",
-                "ASH=textures/particle/ash_particle.png,1,0.1,0.4,NORMAL,0,0,0,0.025",
-                "SLIME=textures/particle/slime_particle.png,0.8,1,1.2,ONE:ONE_MINUS_SRC_COLOR:BRIGHT,4,10,4,0.3",
-                "ENDER=textures/particle/ender_particle.png,1,1,1,SRC_ALPHA:SRC_COLOR,4,0,4,0.25",
+                "BLOOD=textures/particle/blood_particle.png,1,1,1,4,0.25,MULTIPLY,,MIN",
+                "DUST=textures/particle/dust_particle.png,1,0.1,0.4,0,0.025,SRC_ALPHA,ONE,MIN",
+                "ASH=textures/particle/ash_particle.png,1,0.1,0.4,0,0.025,NORMAL",
+                "SLIME=textures/particle/slime_particle.png,0.8,1,1.2,4,0.3,ONE,ONE_MINUS_SRC_COLOR,MAX,BRIGHT",
+                "ENDER=textures/particle/ender_particle.png,1,1,1,4,0.25,SRC_ALPHA,SRC_COLOR",
         };
 
     }
@@ -67,23 +68,26 @@ public class ForgeConfigHandler {
         @Config.Name("Splatter particle fade start time in ticks")
         public int particleFadeStart = 90*20;
 
-        @Config.Name("Size of splatter spread")
-        public float particleSpreadSize = 2.0f;
+        @Config.Name("Size of splatter spread in quarter-circles")
+        public float particleSpreadSize = 1.0f;
 
-        @Config.Name("Size of each individual splatter particle in meters")
+        @Config.Name("Base size of splatter particle in blocks")
         public float particleSize = 0.2f;
 
-        @Config.Name("Particle velocity multiplier")
-        public float particleVelocityMultiplier = 1.0f;
+        @Config.Name("Primary particle velocity multiplier")
+        public float primaryParticleVelocityMultiplier = 1.0f;
 
-        @Config.Name("Particle Spread Variance")
+        @Config.Name("Particle spread variance")
         public float particleSpreadVariance = 1.0f;
 
-        @Config.Name("Enable/Disable splatter particles")
+        @Config.Name("Spray particle velocity")
+        public float sprayParticleVelocity = 0.01f;
+
+        @Config.Name("Enable/Disable splatter particles entirely")
         public boolean enableSplatterParticles = true;
 
         @Config.Comment("Particles emitted is this number plus the damage of the attack times the extra particles per heart of damage")
-        @Config.Name("Number of particles to emit each time a splatter is triggered")
+        @Config.Name("Number of primary particles to emit for each hit")
         public int particleSpreadCount = 1;
 
         @Config.Name("Maximum primary particles per splatter")
@@ -94,7 +98,6 @@ public class ForgeConfigHandler {
 
         @Config.Name("Extra particles per heart of damage")
         public float extraParticlesPerHeartOfDamage = 0.25f;
-
     }
 
 	@Mod.EventBusSubscriber(modid = SplatterizerMod.MODID)
@@ -115,15 +118,13 @@ public class ForgeConfigHandler {
         public final String typeName;
         public final ResourceLocation texture;
         public final int type;
-        public final String blendMode;
+        public final String[] blendMode;
         public final int impactEmissionRate;
-        public final int projectileEmissionRate;
-        public final int decalEmissionRate;
-        public final float emissionVelocity;
+        public final float impactEmissionVelocity;
 
         public ParticleConfig(
-                int typeNum, String typeName, String tex, float size, float gravity, float velocity, String blendMode,
-                int impactEmissionRate, int projectileEmissionRate, int decalEmissionRate, float emissionVelocity
+                int typeNum, String typeName, String tex, float size, float gravity, float velocity,
+                int impactEmissionRate, float impactEmissionVelocity, String blendMode
         ) {
             this.type = typeNum;
             this.typeName = typeName;
@@ -131,11 +132,26 @@ public class ForgeConfigHandler {
             this.gravity = gravity;
             this.velocity = velocity;
             this.size = size;
-            this.blendMode = blendMode;
+            this.blendMode = new String[] {"","","",""};
             this.impactEmissionRate = impactEmissionRate;
-            this.projectileEmissionRate = projectileEmissionRate;
-            this.decalEmissionRate = decalEmissionRate;
-            this.emissionVelocity = emissionVelocity;
+            this.impactEmissionVelocity = impactEmissionVelocity;
+            String[] modes = blendMode.split(",");
+            if (modes.length == 1) {
+                this.blendMode[0] = this.blendMode[1] = modes[0];
+            } else if (modes.length >= 2) {
+                this.blendMode[0] = modes[0];
+                if (modes[1].isEmpty()) {
+                    this.blendMode[1] = modes[0];
+                } else {
+                    this.blendMode[1] = modes[1];
+                }
+                if (modes.length >= 3) {
+                    this.blendMode[2] = modes[2];
+                }
+                if (modes.length >= 4) {
+                    this.blendMode[3] = modes[3];
+                }
+            }
         }
     }
 
@@ -155,17 +171,17 @@ public class ForgeConfigHandler {
             String[] a = s.split("=", 2);
             String[] a2 = null;
             if (a.length == 2) {
-                a2 = a[1].split(",");
+                a2 = a[1].split(",", 7);
             }
-            if (a.length != 2 || a2.length < 9) {
+            if (a.length != 2 || a2.length < 7) {
                 SplatterizerMod.LOGGER.log(Level.WARN, "Invalid particle type config: \"" + s + "\"");
                 continue;
             }
             int num = SplatterizerMod.particleTypes.add(a[0]);
             try {
                 ParticleConfig conf = new ParticleConfig(
-                        num, a[0], a2[0], Float.parseFloat(a2[1]), Float.parseFloat(a2[2]), Float.parseFloat(a2[3]), a2[4],
-                        Integer.parseInt(a2[5]), Integer.parseInt(a2[6]), Integer.parseInt(a2[7]), Float.parseFloat(a2[8])
+                        num, a[0], a2[0], Float.parseFloat(a2[1]), Float.parseFloat(a2[2]), Float.parseFloat(a2[3]),
+                        Integer.parseInt(a2[4]), Float.parseFloat(a2[5]), a2[6]
                 );
                 particleConfigMap.put(a[0], conf);
                 particleConfigIntMap.put(num, conf);
