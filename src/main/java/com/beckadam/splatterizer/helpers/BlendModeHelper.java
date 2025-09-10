@@ -5,7 +5,7 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.Level;
-import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.*;
 
 @SideOnly(Side.CLIENT)
 public class BlendModeHelper {
@@ -44,23 +44,27 @@ public class BlendModeHelper {
         }
     }
     public static boolean getShouldLight(String mode) {
-        return !mode.equalsIgnoreCase("BRIGHT");
+        return !(mode.equalsIgnoreCase("BRIGHT") || mode.equalsIgnoreCase("UNLIT"));
     }
     public static int getBlendFunction(String mode) {
         // same modes as net.minecraft.client.renderer.stringToBlendFunction
         if (mode.equalsIgnoreCase("ADD")) {
-            return 32774;
+            return GL14.GL_FUNC_ADD;
         } else if (mode.equalsIgnoreCase("SUBTRACT")) {
-            return 32778;
+            return GL14.GL_FUNC_SUBTRACT;
         } else if (mode.equalsIgnoreCase("REVERSE_SUBTRACT")) {
-            return 32779;
+            return GL14.GL_FUNC_REVERSE_SUBTRACT;
         } else if (mode.equalsIgnoreCase("REVERSESUBTRACT")) {
-            return 32779;
+            return GL14.GL_FUNC_REVERSE_SUBTRACT;
         } else if (mode.equalsIgnoreCase("MIN")) {
-            return 32775;
+            return GL14.GL_MIN;
+        } else if (mode.equalsIgnoreCase("MAX")) {
+            return GL14.GL_MAX;
         } else {
-            // I'm not going to bother converting these Unicode characters to integer values, let the compiler do it
-            return mode.equalsIgnoreCase("MAX") ? '耈' : '耆';
+            if (!mode.isEmpty()) {
+                SplatterizerMod.LOGGER.log(Level.WARN, "Unknown/Invalid blend operation \"" + mode + "\"");
+            }
+            return GL14.GL_FUNC_ADD;
         }
     }
 }

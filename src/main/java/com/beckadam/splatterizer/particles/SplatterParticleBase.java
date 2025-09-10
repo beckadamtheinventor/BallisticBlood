@@ -148,14 +148,6 @@ public class SplatterParticleBase extends Particle {
             ipy = (float)(player.prevPosY + (player.posY - player.prevPosY) * partialTicks);
             ipz = (float)(player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks);
 
-            GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
-            if (lightingEnabled) {
-                GlStateManager.enableLighting();
-            } else {
-                GlStateManager.disableLighting();
-            }
-            Minecraft.getMinecraft().getTextureManager().bindTexture(splatterParticleTexture);
-
             boolean startedDrawing = false;
             for (ParticleSubType type : ParticleSubType.values()) {
                 if (type == ParticleSubType.BASE) {
@@ -169,6 +161,14 @@ public class SplatterParticleBase extends Particle {
                     // render particles for each texture type
                     if (type == sub.subType) {
                         if (!startedDrawing) {
+                            GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
+                            GlStateManager.glBlendEquation(blendOp);
+                            if (lightingEnabled) {
+                                GlStateManager.enableLighting();
+                            } else {
+                                GlStateManager.disableLighting();
+                            }
+                            Minecraft.getMinecraft().getTextureManager().bindTexture(splatterParticleTexture);
                             buffer.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
                             startedDrawing = true;
                         }
@@ -178,8 +178,8 @@ public class SplatterParticleBase extends Particle {
             }
             if (startedDrawing) {
                 Tessellator.getInstance().draw();
+                GlStateManager.glBlendEquation(32774); // "add" blend function
             }
-
         }
 
     }

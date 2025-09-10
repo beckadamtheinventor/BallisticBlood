@@ -36,7 +36,7 @@ public class SplatterParticle extends SplatterParticleBase {
         if (this.onGround && this.finalQuad != null) {
             quad = finalQuad;
         } else {
-            float w = particleScale * this.width;
+            float w = this.particleScale * this.width;
             quad = new Vec3d[] {
                     new Vec3d((-rotationX * w - rotationXY * w), (-rotationZ * w), (-rotationYZ * w - rotationXZ * w)),
                     new Vec3d((-rotationX * w + rotationXY * w), (rotationZ * w), (-rotationYZ * w + rotationXZ * w)),

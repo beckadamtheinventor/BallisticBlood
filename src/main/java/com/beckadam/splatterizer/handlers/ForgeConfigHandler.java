@@ -54,9 +54,9 @@ public class ForgeConfigHandler {
         @Config.Name("Particle Configuration")
         public String[] particleConfig = new String[] {
                 "BLOOD=textures/particle/blood_particle.png,1,1,1,4,0.25,MULTIPLY,,MIN",
-                "DUST=textures/particle/dust_particle.png,1,0.1,0.4,0,0.025,SRC_ALPHA,ONE,MIN",
-                "ASH=textures/particle/ash_particle.png,1,0.1,0.4,0,0.025,NORMAL",
-                "SLIME=textures/particle/slime_particle.png,0.8,2,1.2,4,0.3,ONE,ONE_MINUS_SRC_COLOR,MAX,BRIGHT",
+                "DUST=textures/particle/dust_particle.png,1,0.1,0.4,0,0.02,NORMAL,,,UNLIT",
+                "ASH=textures/particle/ash_particle.png,1,0.1,0.4,0,0.02,NORMAL",
+                "SLIME=textures/particle/slime_particle.png,0.8,2,1.2,4,0.3,ONE,ONE_MINUS_SRC_COLOR,MAX,UNLIT",
                 "ENDER=textures/particle/ender_particle.png,1,1,1,4,0.25,SRC_ALPHA,SRC_COLOR",
         };
 
