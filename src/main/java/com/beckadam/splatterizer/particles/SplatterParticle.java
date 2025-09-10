@@ -1,8 +1,6 @@
 package com.beckadam.splatterizer.particles;
 
-import com.beckadam.splatterizer.SplatterizerMod;
-import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import com.beckadam.splatterizer.helpers.ParticleHelper;
+import com.beckadam.splatterizer.helpers.CommonHelper;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.EnumFacing;
@@ -10,7 +8,6 @@ import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import org.apache.logging.log4j.Level;
 
 
 public class SplatterParticle extends SplatterParticleBase {
@@ -217,7 +214,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.hitNormal = new Vec3d(0.0, -Math.signum(origY), 0.0);
                 this.posY = pos.getY() + (origY < 0 ? 0 : 1);
                 this.facing = (origY < 0 ? EnumFacing.DOWN : EnumFacing.UP);
-                this.finalQuad = ParticleHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
+                this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width * this.decalScale);
 //                this.computeVertexOverhang();
                 this.posY -= 0.05 * Math.signum(origY) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Floor position: " + new Vec3d(this.posX, this.posY, this.posZ));
@@ -225,7 +222,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.hitNormal = new Vec3d(-Math.signum(origX), 0.0, 0.0);
                 this.posX = pos.getX() + (origX < 0 ? 0 : 1);
                 this.facing = (origX < 0 ? EnumFacing.WEST : EnumFacing.EAST);
-                this.finalQuad = ParticleHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
+                this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
 //                this.computeVertexOverhang();
                 this.posX -= 0.05 * Math.signum(origX) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Wall X position: " + new Vec3d(this.posX, this.posY, this.posZ));
@@ -233,7 +230,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.hitNormal = new Vec3d(0.0, 0.0, -Math.signum(origZ));
                 this.posZ = pos.getZ() + (origZ < 0 ? 0 : 1);
                 this.facing = (origZ < 0 ? EnumFacing.NORTH : EnumFacing.SOUTH);
-                this.finalQuad = ParticleHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
+                this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
 //                this.computeVertexOverhang();
                 this.posZ -= 0.05 * Math.signum(origZ) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Wall Z position: " + new Vec3d(this.posX, this.posY, this.posZ));

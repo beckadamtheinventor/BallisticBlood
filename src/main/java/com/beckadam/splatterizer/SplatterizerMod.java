@@ -1,6 +1,7 @@
 package com.beckadam.splatterizer;
 
 import com.beckadam.splatterizer.handlers.AttackEntityFromHandler;
+import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
 import com.beckadam.splatterizer.message.MessageParticleHandler;
 import com.beckadam.splatterizer.particles.ParticleTypeManager;
 import net.minecraftforge.common.MinecraftForge;
@@ -15,12 +16,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.beckadam.splatterizer.proxy.CommonProxy;
 
-import static com.beckadam.splatterizer.proxy.CommonProxy.networkWrapperInstance;
-
 @Mod(modid = SplatterizerMod.MODID, version = SplatterizerMod.VERSION, name = SplatterizerMod.NAME)
 public class SplatterizerMod {
     public static final String MODID = "splatterizer";
-    public static final String VERSION = "0.0.1";
+    public static final String VERSION = "0.0.2";
     public static final String NAME = "Splatterizer";
     public static final Logger LOGGER = LogManager.getLogger();
     public static boolean completedLoading = false;
@@ -38,11 +37,7 @@ public class SplatterizerMod {
 //        if (event.getSide() == Side.CLIENT) {
 //            RenderWorldLastEventHandler.register(MinecraftForge.EVENT_BUS);
 //        }
-        networkWrapperInstance.registerMessage(
-                MessageParticleHandler.MessageParticleFX.Handler.class,
-                MessageParticleHandler.MessageParticleFX.class,
-                0, Side.CLIENT
-        );
+        PROXY.init();
     }
 
     @Mod.EventHandler
@@ -53,7 +48,9 @@ public class SplatterizerMod {
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {
-        PROXY.LoadTextures();
         completedLoading = true;
+        ForgeConfigHandler.ParseSplatterizerConfig();
+        SplatterizerMod.PROXY.LoadTextures();
+        ForgeConfigHandler.needsTextureLoad = false;
     }
 }

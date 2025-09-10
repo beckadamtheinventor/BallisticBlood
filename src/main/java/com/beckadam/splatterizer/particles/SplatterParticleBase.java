@@ -1,7 +1,7 @@
 package com.beckadam.splatterizer.particles;
 
-import com.beckadam.splatterizer.helpers.ParticleClientHelper;
-import com.beckadam.splatterizer.helpers.ParticleHelper;
+import com.beckadam.splatterizer.helpers.ClientHelper;
+import com.beckadam.splatterizer.helpers.CommonHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.particle.Particle;
@@ -25,13 +25,16 @@ import java.util.List;
 @SideOnly(Side.CLIENT)
 public class SplatterParticleBase extends Particle {
     public ResourceLocation splatterParticleTexture;
+
+    protected static final float particleTextureWidth = 8.0f;
+    protected static final float particleTextureHeight = 8.0f;
+
     protected GlStateManager.SourceFactor blendSourceFactor = GlStateManager.SourceFactor.SRC_ALPHA;
     protected GlStateManager.DestFactor blendDestFactor = GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA;
     protected int blendOp = 32774; // "add" blend mode
     protected boolean lightingEnabled = true;
     protected static int fadeStart;
-    protected static final float particleTextureWidth = 8.0f;
-    protected static final float particleTextureHeight = 8.0f;
+    protected float decalScale;
 
     protected List<AxisAlignedBB> worldCollisionBoxes;
     protected Vec3d hitNormal;
@@ -39,6 +42,7 @@ public class SplatterParticleBase extends Particle {
     protected Vec2f[] finalUVs;
     protected EnumFacing facing;
     protected ArrayList<SplatterParticle> subParticles;
+    protected int subParticleCount = 0;
     protected ParticleSubType subType, oldSubType;
     protected int impactEmissionRate;
     protected int particleType;
@@ -47,7 +51,6 @@ public class SplatterParticleBase extends Particle {
     protected static EntityPlayerSP player;
     protected static float ipx, ipy, ipz;
 
-
     //    protected Vec3d facing;
 
     public SplatterParticleBase(World world, double x, double y, double z, double vx, double vy, double vz) {
@@ -55,12 +58,13 @@ public class SplatterParticleBase extends Particle {
         setParticleTextureIndex(rand.nextInt((int)particleTextureWidth));
         this.width = ForgeConfigHandler.client.particleSize;
         this.height = 0.1f;
-        this.particleScale = 2.0f;
+        this.particleScale = 1.0f;
         this.particleGravity = 1.0f;
         this.particleMaxAge = ForgeConfigHandler.client.particleLifetime;
         this.motionX = vx * ForgeConfigHandler.client.primaryParticleVelocityMultiplier;
         this.motionY = vy * ForgeConfigHandler.client.primaryParticleVelocityMultiplier;
         this.motionZ = vz * ForgeConfigHandler.client.primaryParticleVelocityMultiplier;
+        this.decalScale = ForgeConfigHandler.client.decalScale;
         fadeStart = Math.min(ForgeConfigHandler.client.particleFadeStart, this.particleMaxAge + 1);
         finalUVs = new Vec2f[] { Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO };
         subParticles = new ArrayList<>();
@@ -81,6 +85,8 @@ public class SplatterParticleBase extends Particle {
     public void setGravity(float g) {
         particleGravity = g;
     }
+
+    public void setScale(float s) { particleScale = s; }
 
     public void setBlendFactors(GlStateManager.SourceFactor source, GlStateManager.DestFactor dest, int op, boolean light) {
         blendSourceFactor = source;
@@ -196,15 +202,21 @@ public class SplatterParticleBase extends Particle {
         if (this.subParticles.size() >= maximum) {
             return;
         }
+        if (subParticleCount > ForgeConfigHandler.client.subParticleTotal) {
+            return;
+        }
+        subParticleCount++;
         if (impactEmissionRate > 0 && particleAge % impactEmissionRate == 0) {
-            SplatterParticle particle = ParticleClientHelper.makeParticle(
+            SplatterParticle particle = ClientHelper.makeParticle(
                     particleType, world, getPositionVector(),
                     getDirectionVector().add(
-                            ParticleHelper.GetRandomNormalizedVector()
-                                    .scale(particleSubVelocity)
+                            CommonHelper.GetRandomNormalizedVector()
+                                    .scale(particleSubVelocity*ForgeConfigHandler.client.sprayParticleVelocity)
                     )
             );
             if (particle != null) {
+                particle.setScale(ForgeConfigHandler.client.sprayParticleSize);
+                particle.setGravity(ForgeConfigHandler.client.sprayParticleGravity);
                 particle.setParticleSubType(ParticleSubType.SPRAY);
                 addSubparticle(particle);
             }

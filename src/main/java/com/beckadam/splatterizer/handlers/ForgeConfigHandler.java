@@ -28,6 +28,8 @@ public class ForgeConfigHandler {
     public static HashMap<String, ParticleConfig> particleConfigMap;
     @Config.Ignore
     public static HashMap<Integer, ParticleConfig> particleConfigIntMap;
+    @Config.Ignore
+    public static boolean needsTextureLoad = true;
 
     public static class ServerConfig {
         @Config.Name("Entity splatter types")
@@ -54,7 +56,7 @@ public class ForgeConfigHandler {
                 "BLOOD=textures/particle/blood_particle.png,1,1,1,4,0.25,MULTIPLY,,MIN",
                 "DUST=textures/particle/dust_particle.png,1,0.1,0.4,0,0.025,SRC_ALPHA,ONE,MIN",
                 "ASH=textures/particle/ash_particle.png,1,0.1,0.4,0,0.025,NORMAL",
-                "SLIME=textures/particle/slime_particle.png,0.8,1,1.2,4,0.3,ONE,ONE_MINUS_SRC_COLOR,MAX,BRIGHT",
+                "SLIME=textures/particle/slime_particle.png,0.8,2,1.2,4,0.3,ONE,ONE_MINUS_SRC_COLOR,MAX,BRIGHT",
                 "ENDER=textures/particle/ender_particle.png,1,1,1,4,0.25,SRC_ALPHA,SRC_COLOR",
         };
 
@@ -65,39 +67,58 @@ public class ForgeConfigHandler {
         @Config.Name("Lifetime of splatter particles in ticks")
         public int particleLifetime = 120*20;
 
+        @Config.Comment("Note: this doesn't work for all blend modes")
         @Config.Name("Splatter particle fade start time in ticks")
-        public int particleFadeStart = 90*20;
+        public int particleFadeStart = 100*20;
 
-        @Config.Name("Size of splatter spread in quarter-circles")
+        @Config.Name("Radius of splatter spread in quarter-circles")
         public float particleSpreadSize = 1.0f;
 
-        @Config.Name("Base size of splatter particle in blocks")
-        public float particleSize = 0.2f;
+        @Config.Name("Base size of splatter particles in blocks")
+        public float particleSize = 0.5f;
 
-        @Config.Name("Primary particle velocity multiplier")
+        @Config.Name("Projectile particle velocity multiplier")
         public float primaryParticleVelocityMultiplier = 1.0f;
 
         @Config.Name("Particle spread variance")
         public float particleSpreadVariance = 1.0f;
 
+        @Config.Name("Decal scale")
+        public float decalScale = 2.0f;
+
+        @Config.Name("Projectile particle velocity")
+        public float projectileParticleVelocity = 0.25f;
+
+        @Config.Name("Projectile particle gravity")
+        public float projectileParticleGravity = 1.0f;
+
+        @Config.Name("Projectile particle size")
+        public float projectileParticleSize = 1.0f;
+
         @Config.Name("Spray particle velocity")
-        public float sprayParticleVelocity = 0.01f;
+        public float sprayParticleVelocity = 0.1f;
+
+        @Config.Name("Spray particle gravity")
+        public float sprayParticleGravity = 0.05f;
+
+        @Config.Name("Spray particle size")
+        public float sprayParticleSize = 1.0f;
 
         @Config.Name("Enable/Disable splatter particles entirely")
         public boolean enableSplatterParticles = true;
 
-        @Config.Comment("Particles emitted is this number plus the damage of the attack times the extra particles per heart of damage")
-        @Config.Name("Number of primary particles to emit for each hit")
+        @Config.Comment("Projectile particles emitted is this number plus the damage of the attack times the extra particles per heart of damage")
+        @Config.Name("Number of projectile particles to emit for each hit")
         public int particleSpreadCount = 1;
 
-        @Config.Name("Maximum primary particles per splatter")
+        @Config.Name("Maximum projectile particles per splatter")
         public int particleSpreadMax = 24;
 
-        @Config.Name("Maximum secondary particles per primary particle")
-        public int particleSubMax = 4;
+        @Config.Name("Total number of spray particles to spawn per hit")
+        public int subParticleTotal = 10;
 
-        @Config.Name("Extra particles per heart of damage")
-        public float extraParticlesPerHeartOfDamage = 0.25f;
+        @Config.Name("Extra projectile particles per heart of damage")
+        public float extraParticlesPerHeartOfDamage = 0.5f;
     }
 
 	@Mod.EventBusSubscriber(modid = SplatterizerMod.MODID)
@@ -206,5 +227,6 @@ public class ForgeConfigHandler {
                 SplatterizerMod.LOGGER.log(Level.WARN, "Invalid splatter type mapping: \"" + s + "\"");
             }
         }
+        needsTextureLoad = true;
     }
 }

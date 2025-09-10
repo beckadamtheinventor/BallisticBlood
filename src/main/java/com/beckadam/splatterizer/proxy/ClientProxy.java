@@ -1,40 +1,44 @@
 package com.beckadam.splatterizer.proxy;
 
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import com.beckadam.splatterizer.helpers.ParticleHelper;
-import com.beckadam.splatterizer.helpers.ParticleClientHelper;
+import com.beckadam.splatterizer.helpers.CommonHelper;
+import com.beckadam.splatterizer.helpers.ClientHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.DamageSource;
-import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.Vec3d;
 
 public class ClientProxy extends CommonProxy {
 
+    // TextureManager.getTexture returns null if the texture isn't found
+    // according to the texture bind function, so I'm suppressing the warning
+    // it produces
+    @SuppressWarnings("ConstantValue")
     @Override
     public void LoadTextures() {
-        ForgeConfigHandler.ParseSplatterizerConfig();
         TextureManager tm = Minecraft.getMinecraft().getTextureManager();
         for (ForgeConfigHandler.ParticleConfig cfg : ForgeConfigHandler.particleConfigIntMap.values()) {
-            tm.loadTexture(cfg.texture, new SimpleTexture(cfg.texture));
+            if (tm.getTexture(cfg.texture) == null) {
+                tm.loadTexture(cfg.texture, new SimpleTexture(cfg.texture));
+            }
         }
     }
     @Override
     public void AttackEntityFromHandler(Entity entity, DamageSource source, float amount) {
 //        SplatterizerMod.LOGGER.log(Level.INFO, "ClientProxy.AttackEntityFromHandler");
-        int particleType = ParticleHelper.GetParticleTypeForEntity(entity);
+        int particleType = CommonHelper.GetParticleTypeForEntity(entity);
         // Spawn particles of particleType using position, velocity (scaled by damage amount)
         Entity sourceEntity = source.getImmediateSource();
         if (sourceEntity == null) {
             sourceEntity = source.getTrueSource();
         }
         if (sourceEntity != null) {
-            ParticleClientHelper.splatter(
+            ClientHelper.splatter(
                     particleType,
-                    ParticleHelper.GetParticlePosition(entity, source),
-                    ParticleHelper.GetParticleVelocity(entity.getPositionVector(), source),
+                    CommonHelper.GetParticlePosition(entity, source),
+                    CommonHelper.GetParticleVelocity(entity.getPositionVector(), source),
                     amount
             );
         }

@@ -10,17 +10,13 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
-import org.apache.logging.log4j.Level;
 
 import java.util.Random;
 
-public class ParticleHelper {
+public class CommonHelper {
     // TODO: Make the seed not constant
     public static final Random random = new Random(133742069);
     public static int GetParticleTypeForEntity(Entity entity) {
-        if (ForgeConfigHandler.server.entitySplatterTypeMap == null) {
-            ForgeConfigHandler.ParseSplatterizerConfig();
-        }
         ResourceLocation rl = EntityList.getKey(entity);
         try {
             if (ForgeConfigHandler.server.entitySplatterTypeMap.containsKey(rl)) {
@@ -71,7 +67,7 @@ public class ParticleHelper {
         if (source.isProjectile()) {
             return new Vec3d(sourceEntity.motionX, sourceEntity.motionY, sourceEntity.motionZ);
         } else {
-            return trueSource.getPositionVector().subtract(target).normalize()
+            return target.subtract(trueSource.getPositionVector()).normalize()
                     .add(new Vec3d(trueSource.motionX, trueSource.motionY, trueSource.motionZ).scale(2.0f));
         }
     }
@@ -145,12 +141,12 @@ public class ParticleHelper {
 
     public static Vec3d GetProjectileParticleVelocity(Vec3d dir, int index, int total, double variance, double spread) {
         if (total > 1) {
-            double r = 2.0 * (random.nextFloat() - 0.5) * variance;
+            double r = 0.1 * (random.nextFloat() - 0.5) * variance;
             double r2 = random.nextFloat() * variance;
-            double dx = r + 0.5 + spread * ((double)index / (double)total - 0.5);
+            double dx = r + spread * 4.0 * ((double)index / (double)total - 0.5);
             double dy = 0.25 * random.nextFloat() - 0.125;
             double a0 = Math.atan2(dir.z, dir.x);
-            double ang = a0 + dx * 0.125 * Math.PI;
+            double ang = a0 + dx * 0.5 * Math.PI;
             Vec3d offset = new Vec3d(Math.cos(ang), dy, Math.sin(ang));
 //            SplatterizerMod.LOGGER.log(Level.INFO, "Direction angle: " + ang + " offset vector: " + offset);
             return dir.add(offset.scale(r2));

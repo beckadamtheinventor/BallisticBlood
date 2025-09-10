@@ -1,7 +1,7 @@
 package com.beckadam.splatterizer.message;
 
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import com.beckadam.splatterizer.helpers.ParticleClientHelper;
+import com.beckadam.splatterizer.helpers.ClientHelper;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
@@ -12,20 +12,20 @@ import net.minecraftforge.fml.relauncher.Side;
 // SERVER --> CLIENT
 public class MessageParticleHandler {
 
-    public static class MessageParticleFX implements IMessage {
+    public static class MessageParticle implements IMessage {
         private int splatterType;
         private Vec3d splatterPosition;
         private Vec3d splatterDirection;
         private float splatterDamage;
 
-        public MessageParticleFX(int type, Vec3d position, Vec3d direction, float damage) {
+        public MessageParticle(int type, Vec3d position, Vec3d direction, float damage) {
             splatterType = type;
             splatterPosition = position;
             splatterDirection = direction;
             splatterDamage = damage;
         }
 
-        public MessageParticleFX() {
+        public MessageParticle() {
         }
 
         @Override
@@ -49,11 +49,11 @@ public class MessageParticleHandler {
         }
 
         // CLIENT SIDE
-        public static class Handler implements IMessageHandler<MessageParticleFX, IMessage> {
+        public static class Handler implements IMessageHandler<MessageParticle, IMessage> {
             @Override
-            public IMessage onMessage(MessageParticleFX message, MessageContext ctx) {
+            public IMessage onMessage(MessageParticle message, MessageContext ctx) {
                 if(ctx.side == Side.CLIENT && ForgeConfigHandler.client.enableSplatterParticles) {
-                    ParticleClientHelper.splatter(
+                    ClientHelper.splatter(
                             message.splatterType,
                             message.splatterPosition,
                             message.splatterDirection,
