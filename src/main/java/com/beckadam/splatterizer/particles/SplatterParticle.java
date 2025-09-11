@@ -1,17 +1,24 @@
 package com.beckadam.splatterizer.particles;
 
+import com.beckadam.splatterizer.SplatterizerMod;
 import com.beckadam.splatterizer.helpers.CommonHelper;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.EnumFacing;
-import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.*;
 import net.minecraft.world.World;
+import org.apache.logging.log4j.Level;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class SplatterParticle extends SplatterParticleBase {
     protected boolean hFlip, vFlip;
+    protected int displayMatrixWidth;
+    protected boolean[] displayMatrix;
 
     public SplatterParticle(World world, double x, double y, double z, double vx, double vy, double vz) {
         super(world, x, y, z, vx, vy, vz);
@@ -94,6 +101,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 if (this.checkShouldFall()) {
                     this.onGround = false;
                     this.finalQuad = null;
+                    Arrays.fill(finalUVs, Vec2f.ZERO);
                     this.setParticleSubType(this.oldSubType);
                 } else if (this.checkIsCovered()) {
                     this.setExpired();
@@ -116,13 +124,17 @@ public class SplatterParticle extends SplatterParticleBase {
         return collided;
     }
 
-    private static Vec3d floorOrCeilVec3d(Vec3d vec, Vec3d normal) {
-        double sx = Math.signum(normal.x);
-        double sy = Math.signum(normal.y);
-        double sz = Math.signum(normal.z);
-        double x = sx>0 ? Math.floor(vec.x) : (sx==0 ? vec.x : Math.ceil(vec.x));
-        double y = sy>0 ? Math.floor(vec.y) : (sy==0 ? vec.y : Math.ceil(vec.y));
-        double z = sz>0 ? Math.floor(vec.z) : (sz==0 ? vec.z : Math.ceil(vec.z));
+    private static Vec3d doVertexClip(Vec3d vec, Vec3d normal) {
+        double x = vec.x, y = vec.y, z = vec.z;
+        if (normal.x == 0 && normal.z == 0) {
+            y = vec.y > 0 ? Math.floor(vec.y) : (vec.y == 0 ? vec.y : Math.ceil(vec.y));
+        }
+        if (normal.y == 0 && normal.z == 0) {
+            x = vec.x > 0 ? Math.floor(vec.x) : (vec.x == 0 ? vec.x : Math.ceil(vec.x));
+        }
+        if (normal.x == 0 && normal.y == 0) {
+            z = vec.z > 0 ? Math.floor(vec.z) : (vec.z == 0 ? vec.z : Math.ceil(vec.z));
+        }
         return new Vec3d(x, y, z);
     }
 
@@ -131,53 +143,51 @@ public class SplatterParticle extends SplatterParticleBase {
             return;
         }
         Vec3d posVec = new Vec3d(posX, posY, posZ).subtract(hitNormal);
-        Vec3d vert0 = finalQuad[0].add(posVec);
-        Vec3d vert1 = finalQuad[1].add(posVec);
-        Vec3d vert2 = finalQuad[2].add(posVec);
-        Vec3d vert3 = finalQuad[3].add(posVec);
-        boolean vert0attached = false;
-        boolean vert1attached = false;
-        boolean vert2attached = false;
-        boolean vert3attached = false;
-        for (AxisAlignedBB box : worldCollisionBoxes) {
-            vert0attached |= box.contains(vert0);
-            vert1attached |= box.contains(vert1);
-            vert2attached |= box.contains(vert2);
-            vert3attached |= box.contains(vert3);
-        }
+
         Vec3d[] orig = finalQuad.clone();
-        if (!vert0attached) {
-            finalQuad[0] = floorOrCeilVec3d(finalQuad[0], hitNormal);
-//            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 0 to " + finalQuad[0]);
-        }
-        if (!vert1attached) {
-            finalQuad[1] = floorOrCeilVec3d(finalQuad[1], hitNormal);
-//            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 1 to " + finalQuad[1]);
-        }
-        if (!vert2attached) {
-            finalQuad[2] = floorOrCeilVec3d(finalQuad[2], hitNormal);
-//            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 2 to " + finalQuad[2]);
-        }
-        if (!vert3attached) {
-            finalQuad[3] = floorOrCeilVec3d(finalQuad[3], hitNormal);
-//            SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex 3 to " + finalQuad[3]);
-        }
-//        finalUVs = new Vec2f[4];
-//        for (int i=0; i<finalUVs.length; i++) {
-//            if (hitNormal.x == 0) {
-//                if (hitNormal.y == 0) {
-//                    finalUVs[i] = new Vec2f((float)finalQuad[i].x, (float)finalQuad[i].y);
-//                } else if (hitNormal.z == 0) {
-//                    finalUVs[i] = new Vec2f((float)finalQuad[i].x, (float)finalQuad[i].z);
-//                }
-//            } else if (hitNormal.y == 0) {
-//                finalUVs[i] = new Vec2f((float)finalQuad[i].y, (float)finalQuad[i].z);
+//        AxisAlignedBB box = new AxisAlignedBB(-1e18, -1e18, -1e18, 1e18, 1e18, 1e18);
+        for (int i=0; i<finalQuad.length; i++) {
+            Vec3d pv = finalQuad[i].add(posVec);
+            BlockPos pos = new BlockPos(pv);
+            IBlockState block = world.getBlockState(pos);
+//            List<AxisAlignedBB> blockBoundingBoxes = new ArrayList<>();
+//            block.addCollisionBoxToList(world, pos, box, blockBoundingBoxes, null, false);
+//            boolean attached = false;
+//            for (AxisAlignedBB bb : blockBoundingBoxes) {
+//                attached |= bb.contains(pv);
 //            }
-//            finalUVs[i] = new Vec2f(
-//                    (finalUVs[i].x - (float)orig[i].x) / particleTextureWidth,
-//                    finalUVs[i].y - (float)orig[i].y
-//            );
-//        }
+//            if (!attached) {
+            if (!block.isFullBlock()) {
+                finalQuad[i] = doVertexClip(pv, hitNormal).subtract(pv);
+                SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex " + i + " to " + finalQuad[i]);
+            }
+//            }
+        }
+
+        finalUVs = new Vec2f[4];
+        for (int i=0; i<finalUVs.length; i++) {
+            if (finalUVs[i] == null) {
+                finalUVs[i] = Vec2f.ZERO;
+            }
+            if (hitNormal.x == 0) {
+                if (hitNormal.y == 0) {
+                    finalUVs[i] = new Vec2f(
+                            finalUVs[i].x+(float)(finalQuad[i].x-orig[i].x)/particleTextureWidth,
+                            finalUVs[i].y+(float)(finalQuad[i].y-orig[i].y)/particleTextureHeight
+                    );
+                } else if (hitNormal.z == 0) {
+                    finalUVs[i] = new Vec2f(
+                            finalUVs[i].x+(float)(finalQuad[i].x-orig[i].x)/particleTextureWidth,
+                            finalUVs[i].y+(float)(finalQuad[i].z-orig[i].z)/particleTextureHeight
+                    );
+                }
+            } else if (hitNormal.y == 0) {
+                finalUVs[i] = new Vec2f(
+                        finalUVs[i].x+(float)(finalQuad[i].y-orig[i].y)/particleTextureWidth,
+                        finalUVs[i].y+(float)(finalQuad[i].z-orig[i].z)/particleTextureHeight
+                );
+            }
+        }
     }
 
     @Override
@@ -215,7 +225,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.posY = pos.getY() + (origY < 0 ? 0 : 1);
                 this.facing = (origY < 0 ? EnumFacing.DOWN : EnumFacing.UP);
                 this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width * this.decalScale);
-//                this.computeVertexOverhang();
+                this.computeVertexOverhang();
                 this.posY -= 0.05 * Math.signum(origY) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Floor position: " + new Vec3d(this.posX, this.posY, this.posZ));
             } else if (origX != dx) {
@@ -223,7 +233,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.posX = pos.getX() + (origX < 0 ? 0 : 1);
                 this.facing = (origX < 0 ? EnumFacing.WEST : EnumFacing.EAST);
                 this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
-//                this.computeVertexOverhang();
+                this.computeVertexOverhang();
                 this.posX -= 0.05 * Math.signum(origX) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Wall X position: " + new Vec3d(this.posX, this.posY, this.posZ));
             } else if (origZ != dz) {
@@ -231,7 +241,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.posZ = pos.getZ() + (origZ < 0 ? 0 : 1);
                 this.facing = (origZ < 0 ? EnumFacing.NORTH : EnumFacing.SOUTH);
                 this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
-//                this.computeVertexOverhang();
+                this.computeVertexOverhang();
                 this.posZ -= 0.05 * Math.signum(origZ) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Wall Z position: " + new Vec3d(this.posX, this.posY, this.posZ));
             } else {

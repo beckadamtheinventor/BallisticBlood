@@ -30,7 +30,7 @@ public class BlendModeHelper {
         if (mode.equalsIgnoreCase("NORMAL")) {
             return GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA;
         } else if (mode.equalsIgnoreCase("MULTIPLY")) {
-            return GlStateManager.DestFactor.SRC_COLOR;
+            return GlStateManager.DestFactor.ZERO;
         } else if (mode.equalsIgnoreCase("LIGHTEN")) {
             return GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR;
         } else {

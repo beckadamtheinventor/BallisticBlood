@@ -163,6 +163,8 @@ public class SplatterParticleBase extends Particle {
                         if (!startedDrawing) {
                             GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
                             GlStateManager.glBlendEquation(blendOp);
+                            GlStateManager.enableBlend();
+                            GlStateManager.enableNormalize();
                             if (lightingEnabled) {
                                 GlStateManager.enableLighting();
                             } else {

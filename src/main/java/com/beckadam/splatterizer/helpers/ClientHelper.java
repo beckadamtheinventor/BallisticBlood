@@ -43,7 +43,7 @@ public class ClientHelper {
         GlStateManager.DestFactor destFactor = BlendModeHelper.getDestFactor(cfg.blendMode[1]);
         int blendOp = BlendModeHelper.getBlendFunction(cfg.blendMode[2]);
         boolean lightingEnabled = BlendModeHelper.getShouldLight(cfg.blendMode[3]);
-//        SplatterizerMod.LOGGER.log(Level.INFO, "srcFactor: " + cfg.blendMode[0] + ", destFactor: " + cfg.blendMode[1] + ", blendOp: " + cfg.blendMode[2] + ", lighting: " + cfg.blendMode[3]);
+        SplatterizerMod.LOGGER.log(Level.INFO, "srcFactor: " + srcFactor + ", destFactor: " + destFactor + ", blendOp: " + blendOp + ", lighting: " + lightingEnabled);
 
         // Note: the main particle is just the spray emitter and doesn't render
         // The projectile particles and spray particles do render
