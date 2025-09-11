@@ -1,5 +1,6 @@
 package com.beckadam.splatterizer.particles;
 
+import com.beckadam.splatterizer.SplatterizerMod;
 import com.beckadam.splatterizer.helpers.ClientHelper;
 import com.beckadam.splatterizer.helpers.CommonHelper;
 import net.minecraft.client.Minecraft;
@@ -17,6 +18,7 @@ import net.minecraft.world.World;
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.apache.logging.log4j.Level;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +35,7 @@ public class SplatterParticleBase extends Particle {
     protected GlStateManager.DestFactor blendDestFactor = GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA;
     protected int blendOp = 32774; // "add" blend mode
     protected boolean lightingEnabled = true;
-    protected static int fadeStart;
+    protected int fadeStart;
     protected float decalScale;
 
     protected List<AxisAlignedBB> worldCollisionBoxes;
@@ -44,7 +46,7 @@ public class SplatterParticleBase extends Particle {
     protected ArrayList<SplatterParticle> subParticles;
     protected int subParticleCount = 0;
     protected ParticleSubType subType, oldSubType;
-    protected int impactEmissionRate;
+    protected int emissionRate;
     protected int particleType;
     protected float particleSubVelocity;
 
@@ -60,18 +62,23 @@ public class SplatterParticleBase extends Particle {
         this.height = 0.1f;
         this.particleScale = 1.0f;
         this.particleGravity = 1.0f;
-        this.particleMaxAge = ForgeConfigHandler.client.particleLifetime;
-        this.motionX = vx * ForgeConfigHandler.client.primaryParticleVelocityMultiplier;
-        this.motionY = vy * ForgeConfigHandler.client.primaryParticleVelocityMultiplier;
-        this.motionZ = vz * ForgeConfigHandler.client.primaryParticleVelocityMultiplier;
+        this.motionX = vx;
+        this.motionY = vy;
+        this.motionZ = vz;
         this.decalScale = ForgeConfigHandler.client.decalScale;
-        fadeStart = Math.min(ForgeConfigHandler.client.particleFadeStart, this.particleMaxAge + 1);
+        this.particleMaxAge = ForgeConfigHandler.client.particleLifetime;
+        this.fadeStart = Math.min(ForgeConfigHandler.client.particleFadeStart, this.particleMaxAge + 1);
         finalUVs = new Vec2f[] { Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO };
         subParticles = new ArrayList<>();
         subType = ParticleSubType.BASE;
         splatterParticleTexture = null;
         player = Minecraft.getMinecraft().player;
-        this.impactEmissionRate = 0;
+        this.emissionRate = 0;
+    }
+
+    public void setLifetime(int lifetime, int fadestart) {
+        this.particleMaxAge = lifetime;
+        this.fadeStart = Math.min(fadestart, this.particleMaxAge + 1);
     }
 
     public void addSubparticle(SplatterParticle particle) {
@@ -83,7 +90,7 @@ public class SplatterParticleBase extends Particle {
     }
 
     public void setGravity(float g) {
-        particleGravity = g;
+        particleGravity = g * ForgeConfigHandler.client.particleGravityBase / 20.0f;
     }
 
     public void setScale(float s) { particleScale = s; }
@@ -102,13 +109,14 @@ public class SplatterParticleBase extends Particle {
     public void setParticleSubType(ParticleSubType type) {
         subType = type;
         switch (type) {
+            case PROJECTILE:
             case DECAL:
                 this.particleTextureIndexY = rand.nextInt(5); // rows 0, 1, 2, 3, 4
                 break;
             case SPRAY:
                 this.particleTextureIndexY = rand.nextInt(3) + 4; // rows 5, 6, 7
+                SplatterizerMod.LOGGER.log(Level.INFO, "SPRAY particleTextureIndexY = " + this.particleTextureIndexY);
                 break;
-            case PROJECTILE:
             case IMPACT:
             case BASE:
             default:
@@ -116,8 +124,8 @@ public class SplatterParticleBase extends Particle {
         }
     }
 
-    public void setEmissionRates(int impactEmissionRate) {
-        this.impactEmissionRate = impactEmissionRate;
+    public void setEmissionRate(int impactEmissionRate) {
+        this.emissionRate = impactEmissionRate;
     }
 
     public void setEmissionVelocity(float particleSubVelocity) {
@@ -208,7 +216,7 @@ public class SplatterParticleBase extends Particle {
             return;
         }
         subParticleCount++;
-        if (impactEmissionRate > 0 && particleAge % impactEmissionRate == 0) {
+        if (emissionRate > 0 && particleAge % emissionRate == 0) {
             SplatterParticle particle = ClientHelper.makeParticle(
                     particleType, world, getPositionVector(),
                     getDirectionVector().add(
@@ -220,6 +228,7 @@ public class SplatterParticleBase extends Particle {
                 particle.setScale(ForgeConfigHandler.client.sprayParticleSize);
                 particle.setGravity(ForgeConfigHandler.client.sprayParticleGravity);
                 particle.setParticleSubType(ParticleSubType.SPRAY);
+                particle.setLifetime(ForgeConfigHandler.client.sprayParticleLifetime, ForgeConfigHandler.client.particleFadeStart);
                 addSubparticle(particle);
             }
         }

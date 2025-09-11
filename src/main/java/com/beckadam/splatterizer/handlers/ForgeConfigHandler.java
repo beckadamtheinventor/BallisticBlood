@@ -32,6 +32,7 @@ public class ForgeConfigHandler {
     public static boolean needsTextureLoad = true;
 
     public static class ServerConfig {
+        @Config.Comment("entity=type eg. minecraft:player=ENDER")
         @Config.Name("Entity splatter types")
         public String[] entitySplatterTypes = new String[] {
                 "minecraft:skeleton=DUST",
@@ -44,14 +45,15 @@ public class ForgeConfigHandler {
                 "minecraft:shulker=ENDER",
         };
 
+        @Config.Comment("Splatter type for entities not specified")
         @Config.Name("Default splatter type")
         public String entitySplatterTypeDefault = "BLOOD";
 
         @Config.Ignore
         public Map<ResourceLocation, Integer> entitySplatterTypeMap = null;
 
-        @Config.Comment("name=texture.png,size,gravity,velocity,impactEmissionRate,projectileEmissionRate,decalEmissionRate,emissionVelocity,blendmode(s)")
-        @Config.Name("Particle Configuration")
+        @Config.Comment("Difficult to edit manually, but this defines all the available splatter types and various per-type values.\nThere will probably be a web UI for this at some point.")
+        @Config.Name("Splatter Type List")
         public String[] particleConfig = new String[] {
                 "BLOOD=textures/particle/blood_particle.png,1,1,1,4,0.25,MULTIPLY,,MIN",
                 "DUST=textures/particle/dust_particle.png,1,0.1,0.4,0,0.02,NORMAL,,,UNLIT",
@@ -64,59 +66,81 @@ public class ForgeConfigHandler {
 
 	public static class ClientConfig {
 
+        @Config.Comment("Measured in ticks. There are 20 ticks in a second. This is the lifetime of the initial hit particle emitter")
         @Config.Name("Lifetime of splatter particles in ticks")
         public int particleLifetime = 120*20;
 
-        @Config.Comment("Note: this doesn't work for all blend modes")
+        @Config.Comment("This doesn't work for all blend modes!")
         @Config.Name("Splatter particle fade start time in ticks")
         public int particleFadeStart = 100*20;
 
         @Config.Name("Radius of splatter spread in quarter-circles")
         public float particleSpreadSize = 1.0f;
 
-        @Config.Name("Base size of splatter particles in blocks")
+        @Config.Comment("Measured in blocks per second squared. Default value (9.81) is Earth gravity. Multiplied by other values to get final value.")
+        @Config.Name("Gravity multiplier for all particles")
+        public float particleGravityBase = 9.81f;
+
+        @Config.Comment("Measured in blocks. Multiplied by other values to get final value.")
+        @Config.Name("Base size of particles")
         public float particleSize = 0.5f;
 
-        @Config.Name("Projectile particle velocity multiplier")
-        public float primaryParticleVelocityMultiplier = 1.0f;
-
+        @Config.Comment("Maximum multiplier to randomly offset projectile particle direction")
         @Config.Name("Particle spread variance")
         public float particleSpreadVariance = 1.0f;
 
+        @Config.Comment("Size of particles when they hit a wall. Multiplied by other values to get final value.")
         @Config.Name("Decal scale")
         public float decalScale = 2.0f;
 
+        @Config.Comment("Multiplied by other values to get final value.")
         @Config.Name("Projectile particle velocity")
         public float projectileParticleVelocity = 0.25f;
 
+        @Config.Comment("Multiplied by other values to get final value.")
         @Config.Name("Projectile particle gravity")
         public float projectileParticleGravity = 1.0f;
 
+        @Config.Comment("Multiplied by other values to get final value.")
         @Config.Name("Projectile particle size")
         public float projectileParticleSize = 1.0f;
 
+        @Config.Comment("Measured in ticks. There are 20 ticks in a second.")
+        @Config.Name("Projectile particle lifetime in ticks")
+        public int projectileParticleLifetime = 15*20;
+
+        @Config.Comment("Multiplied by other values to get final value.")
         @Config.Name("Spray particle velocity")
         public float sprayParticleVelocity = 0.1f;
 
+        @Config.Comment("Multiplied by other values to get final value.")
         @Config.Name("Spray particle gravity")
-        public float sprayParticleGravity = 0.05f;
+        public float sprayParticleGravity = 0.0f;
 
+        @Config.Comment("Multiplied by other values to get final value.")
         @Config.Name("Spray particle size")
         public float sprayParticleSize = 1.0f;
+
+        @Config.Comment("Measured in ticks. There are 20 ticks in a second.")
+        @Config.Name("Spray particle lifetime in ticks")
+        public int sprayParticleLifetime = 3*20;
 
         @Config.Name("Enable/Disable splatter particles entirely")
         public boolean enableSplatterParticles = true;
 
-        @Config.Comment("Projectile particles emitted is this number plus the damage of the attack times the extra particles per heart of damage")
+        @Config.Comment("Projectile particles emitted is this number plus the damage times the particles per heart")
         @Config.Name("Number of projectile particles to emit for each hit")
         public int particleSpreadCount = 1;
 
+        @Config.Comment("Absolute maximum number of projectile particles to spawn per hit")
         @Config.Name("Maximum projectile particles per splatter")
         public int particleSpreadMax = 24;
 
+        @Config.Comment("Total number of spray particles to emit from the hit position")
         @Config.Name("Total number of spray particles to spawn per hit")
         public int subParticleTotal = 10;
 
+        @Config.Comment("Projectile particles emitted is the spread count plus the damage times this value")
         @Config.Name("Extra projectile particles per heart of damage")
         public float extraParticlesPerHeartOfDamage = 0.5f;
     }

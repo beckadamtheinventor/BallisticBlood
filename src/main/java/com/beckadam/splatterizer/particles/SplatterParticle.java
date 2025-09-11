@@ -1,6 +1,7 @@
 package com.beckadam.splatterizer.particles;
 
 import com.beckadam.splatterizer.SplatterizerMod;
+import com.beckadam.splatterizer.helpers.ClientHelper;
 import com.beckadam.splatterizer.helpers.CommonHelper;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -94,10 +95,12 @@ public class SplatterParticle extends SplatterParticleBase {
             this.prevPosX = this.posX;
             this.prevPosY = this.posY;
             this.prevPosZ = this.posZ;
-            this.motionY -= 0.04 * (double)this.particleGravity;
+            this.motionY -= this.particleGravity;
             this.move(this.motionX, this.motionY, this.motionZ);
         } else {
             if ((this.particleAge & 3) == 0) {
+//                this.computeVertexOverhang();
+//            } else if ((this.particleAge & 3) == 2) {
                 if (this.checkShouldFall()) {
                     this.onGround = false;
                     this.finalQuad = null;
@@ -124,26 +127,28 @@ public class SplatterParticle extends SplatterParticleBase {
         return collided;
     }
 
-    private static Vec3d doVertexClip(Vec3d vec, Vec3d normal) {
+    private static Vec3d doVertexClip(Vec3d vec, Vec3d normal, Vec3d axis) {
         double x = vec.x, y = vec.y, z = vec.z;
-        if (normal.x == 0 && normal.z == 0) {
-            y = vec.y > 0 ? Math.floor(vec.y) : (vec.y == 0 ? vec.y : Math.ceil(vec.y));
+        if (normal.x == 0) {
+            x = axis.x > 0 ? Math.floor(vec.x) : (axis.x == 0 ? vec.x : Math.ceil(vec.x));
         }
-        if (normal.y == 0 && normal.z == 0) {
-            x = vec.x > 0 ? Math.floor(vec.x) : (vec.x == 0 ? vec.x : Math.ceil(vec.x));
+        if (normal.y == 0) {
+            y = axis.y > 0 ? Math.floor(vec.y) : (axis.y == 0 ? vec.y : Math.ceil(vec.y));
         }
-        if (normal.x == 0 && normal.y == 0) {
-            z = vec.z > 0 ? Math.floor(vec.z) : (vec.z == 0 ? vec.z : Math.ceil(vec.z));
+        if (normal.z == 0) {
+            z = axis.z > 0 ? Math.floor(vec.z) : (axis.z == 0 ? vec.z : Math.ceil(vec.z));
         }
         return new Vec3d(x, y, z);
     }
 
+    // doesn't work right now
     private void computeVertexOverhang() {
         if (!this.canCollide) {
             return;
         }
         Vec3d posVec = new Vec3d(posX, posY, posZ).subtract(hitNormal);
 
+        Vec3d[] axisQuad = CommonHelper.GetAxisAlignedQuad(this.facing, 1.0);
         Vec3d[] orig = finalQuad.clone();
 //        AxisAlignedBB box = new AxisAlignedBB(-1e18, -1e18, -1e18, 1e18, 1e18, 1e18);
         for (int i=0; i<finalQuad.length; i++) {
@@ -158,13 +163,16 @@ public class SplatterParticle extends SplatterParticleBase {
 //            }
 //            if (!attached) {
             if (!block.isFullBlock()) {
-                finalQuad[i] = doVertexClip(pv, hitNormal).subtract(pv);
-                SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex " + i + " to " + finalQuad[i]);
+                Vec3d dvec = doVertexClip(pv, hitNormal, axisQuad[i]).subtract(pv);
+                setPosition(posX+dvec.x, posY+dvec.y, posZ+dvec.z);
+//                SplatterizerMod.LOGGER.log(Level.INFO, "Moving Vertex " + i + " to " + finalQuad[i]);
             }
 //            }
         }
 
-        finalUVs = new Vec2f[4];
+        if (finalUVs == null) {
+            finalUVs = new Vec2f[4];
+        }
         for (int i=0; i<finalUVs.length; i++) {
             if (finalUVs[i] == null) {
                 finalUVs[i] = Vec2f.ZERO;
@@ -225,7 +233,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.posY = pos.getY() + (origY < 0 ? 0 : 1);
                 this.facing = (origY < 0 ? EnumFacing.DOWN : EnumFacing.UP);
                 this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width * this.decalScale);
-                this.computeVertexOverhang();
+//                this.computeVertexOverhang();
                 this.posY -= 0.05 * Math.signum(origY) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Floor position: " + new Vec3d(this.posX, this.posY, this.posZ));
             } else if (origX != dx) {
@@ -233,7 +241,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.posX = pos.getX() + (origX < 0 ? 0 : 1);
                 this.facing = (origX < 0 ? EnumFacing.WEST : EnumFacing.EAST);
                 this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
-                this.computeVertexOverhang();
+//                this.computeVertexOverhang();
                 this.posX -= 0.05 * Math.signum(origX) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Wall X position: " + new Vec3d(this.posX, this.posY, this.posZ));
             } else if (origZ != dz) {
@@ -241,7 +249,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.posZ = pos.getZ() + (origZ < 0 ? 0 : 1);
                 this.facing = (origZ < 0 ? EnumFacing.NORTH : EnumFacing.SOUTH);
                 this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.particleScale * this.width);
-                this.computeVertexOverhang();
+//                this.computeVertexOverhang();
                 this.posZ -= 0.05 * Math.signum(origZ) * (0.6f + 0.4f * rand.nextFloat());
 //                SplatterizerMod.LOGGER.log(Level.INFO, "Wall Z position: " + new Vec3d(this.posX, this.posY, this.posZ));
             } else {

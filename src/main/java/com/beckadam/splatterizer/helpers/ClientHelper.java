@@ -17,6 +17,8 @@ import java.util.Random;
 public class ClientHelper {
     private static final Random random = new Random();
 
+    ///  Spawn splatter particles for a given splatter type at position facing direction (also used for velocity) scaling by damage
+    ///  Uses values from both client and server config
     public static void splatter(int type, Vec3d position, Vec3d direction, float damage) {
         if (ForgeConfigHandler.particleConfigIntMap.containsKey(type)) {
             splatter(ForgeConfigHandler.particleConfigIntMap.get(type), position, direction, damage);
@@ -25,6 +27,8 @@ public class ClientHelper {
         }
     }
 
+    ///  Spawn splatter particles for a given splatter config at position facing direction (also used for velocity) scaling by damage
+    ///  Uses values from client config
     public static void splatter(ForgeConfigHandler.ParticleConfig cfg, Vec3d position, Vec3d direction, float damage) {
         World world = Minecraft.getMinecraft().world;
         if (world == null) {
@@ -43,40 +47,67 @@ public class ClientHelper {
         GlStateManager.DestFactor destFactor = BlendModeHelper.getDestFactor(cfg.blendMode[1]);
         int blendOp = BlendModeHelper.getBlendFunction(cfg.blendMode[2]);
         boolean lightingEnabled = BlendModeHelper.getShouldLight(cfg.blendMode[3]);
-        SplatterizerMod.LOGGER.log(Level.INFO, "srcFactor: " + srcFactor + ", destFactor: " + destFactor + ", blendOp: " + blendOp + ", lighting: " + lightingEnabled);
+//        SplatterizerMod.LOGGER.log(Level.INFO, "srcFactor: " + srcFactor + ", destFactor: " + destFactor + ", blendOp: " + blendOp + ", lighting: " + lightingEnabled);
 
         // Note: the main particle is just the spray emitter and doesn't render
         // The projectile particles and spray particles do render
+
+        // create the main impact particle at the hit position with no velocity
         SplatterParticleBase mainParticle = makeParticleBase(cfg.type, world, position, Vec3d.ZERO);
         if (mainParticle != null) {
+            // set the particle subtype so the main impact particle doesn't get rendered
             mainParticle.setParticleSubType(ParticleSubType.IMPACT);
+
+            // set no gravity so it stays in the same position
             mainParticle.setGravity(0.0f);
-            mainParticle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
-            mainParticle.setEmissionRates(cfg.impactEmissionRate);
+
+            // set the rate at which the impact particle emits spray particles
+            mainParticle.setEmissionRate(cfg.impactEmissionRate);
+
+            // set the velocity for emitted spray particles
             mainParticle.setEmissionVelocity(cfg.impactEmissionVelocity);
+
+            // create projectiles depending on config and damage amount
             for (int index = 0; index < count; index++) {
+                // grab the direction/velocity vector for this particle
+                // (should spread in an arc-like pattern)
                 Vec3d dir = CommonHelper.GetProjectileParticleVelocity(direction, index, count, spreadVariance, spreadSize);
-                SplatterParticle part = makeParticle(cfg.type, world, position, dir.scale(ForgeConfigHandler.client.projectileParticleVelocity));
-                if (part != null) {
-                    part.setParticleSubType(ParticleSubType.PROJECTILE);
-                    part.setGravity(ForgeConfigHandler.client.projectileParticleGravity);
-                    part.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
-                    part.setScale(ForgeConfigHandler.client.projectileParticleSize);
-                    mainParticle.addSubparticle(part);
+
+                // create a projectile particle at the hit position using the velocity scaled by config
+                SplatterParticle particle = makeParticle(cfg.type, world, position, dir.scale(ForgeConfigHandler.client.projectileParticleVelocity));
+
+                // if the particle was successfully created...
+                if (particle != null) {
+                    // set the particle subtype and pick a random texture from the atlas
+                    // (texture selected from rows 0, 1, 2, 3, and 4)
+                    particle.setParticleSubType(ParticleSubType.PROJECTILE);
+
+                    // set gravity from config
+                    particle.setGravity(ForgeConfigHandler.client.projectileParticleGravity);
+
+                    // set color/alpha blending factors
+                    particle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
+
+                    // set scale from config
+                    particle.setScale(ForgeConfigHandler.client.projectileParticleSize);
+
+                    // set lifetime specific to this projectile
+                    particle.setLifetime(ForgeConfigHandler.client.projectileParticleLifetime, ForgeConfigHandler.client.particleFadeStart);
+
+                    // add the projectile particle to the main impact particle
+                    mainParticle.addSubparticle(particle);
                 }
-//                Vec3d randDir = ParticleHelper.GetRandomNormalizedVector()
-//                        .scale(ForgeConfigHandler.client.sprayParticleVelocity);
-//                SplatterParticle part2 = makeParticle(cfg.type, world, position, randDir);
-//                if (part2 != null) {
-//                    part2.setParticleSubType(ParticleSubType.SPRAY);
-//                    part2.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
-//                    mainParticle.addSubparticle(part2);
-//                }
             }
+            // finally, add the impact particle to Minecraft's particle effect list
+            // SplatterParticleBase.renderParticle is called by the game to draw the particle
+            //   the function draws the projectile and spray particles
+            // SplatterParticleBase.onUpdate is called by the game to update the particle's position and lifetime
+            //   the function updates the initial particle's lifetime and updates the projectile and spray particles
             Minecraft.getMinecraft().effectRenderer.addEffect(mainParticle);
         }
     }
 
+    ///   Create and initialize an Impact (initial) particle at position (pos) with velocity (dir)
     public static SplatterParticleBase makeParticleBase(int type, World world, Vec3d pos, Vec3d dir) {
         if (ForgeConfigHandler.particleConfigIntMap.containsKey(type)) {
             ForgeConfigHandler.ParticleConfig cfg = ForgeConfigHandler.particleConfigIntMap.get(type);
@@ -90,6 +121,7 @@ public class ClientHelper {
         return null;
     }
 
+    ///  Create and initialize a Projectile or Spray particle at position (pos) with velocity (dir)
     public static SplatterParticle makeParticle(int type, World world, Vec3d pos, Vec3d dir) {
         if (ForgeConfigHandler.particleConfigIntMap.containsKey(type)) {
             ForgeConfigHandler.ParticleConfig cfg = ForgeConfigHandler.particleConfigIntMap.get(type);
