@@ -4,7 +4,6 @@ package com.beckadam.splatterizer.handlers;
 import com.beckadam.splatterizer.particles.ParticleTypeManager;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.client.util.JsonException;
 import net.minecraft.util.JsonUtils;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Config;
@@ -78,6 +77,15 @@ public class ForgeConfigHandler {
     }
 
 	public static class ClientConfig {
+        @Config.Comment("Experimental method to reduce the likelihood of decal particles being partially midair")
+        @Config.Name("Enable experimental overhang clipping method")
+        public boolean enableExperimentalOverhangClipping = true;
+
+        @Config.Comment("The number of vertices of a decal quad to allow midair before making the particle fall")
+        @Config.Name("Floating vertex fall threshold")
+        @Config.RangeInt(min=0, max=4)
+        public int floatingVertexFallThreshold = 2;
+
 
         @Config.Comment("Measured in ticks. There are 20 ticks in a second.\nThis is the lifetime of the initial hit particle emitter.\nMake sure this is greater than or equal to the other lifetimes.")
         @Config.Name("Lifetime of splatter particles in ticks")
@@ -146,7 +154,8 @@ public class ForgeConfigHandler {
         @Config.Name("Spray particle fade start in ticks")
         public int sprayParticleFadeStart = 20;
 
-        @Config.Name("Enable/Disable splatter particles entirely")
+        @Config.Comment("If this is false, no splatter particles will be rendered!")
+        @Config.Name("Enable splatter particles")
         public boolean enableSplatterParticles = true;
 
         @Config.Comment("Projectile particles emitted is this number plus the damage times the particles per heart")
@@ -192,18 +201,18 @@ public class ForgeConfigHandler {
         public final float colorMultiplier;
         public final float alphaMultiplier;
 
-        public ParticleConfig(String config) throws JsonException {
+        public ParticleConfig(String config) throws RuntimeException {
             JsonObject json = new JsonParser().parse(config).getAsJsonObject();
             if (!JsonUtils.hasField(json, "name")) {
-                throw new JsonException("missing name in particle config!");
+                throw new RuntimeException("missing name in particle config!");
             }
             if (!JsonUtils.hasField(json, "texture")) {
-                throw new JsonException("missing texture in particle config!");
+                throw new RuntimeException("missing texture in particle config!");
             }
             typeName = JsonUtils.getString(json, "name");
             String tex = JsonUtils.getString(json, "texture");
             if (!tex.contains(":")) {
-                throw new JsonException("missing mod id in texture resource location!");
+                throw new RuntimeException("missing mod id in texture resource location!");
             }
             texture = new ResourceLocation(tex);
             if (JsonUtils.hasField(json, "size")) {

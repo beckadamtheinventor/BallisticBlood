@@ -1,6 +1,8 @@
 package com.beckadam.splatterizer.particles;
 
+import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
 import com.beckadam.splatterizer.helpers.CommonHelper;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.EnumFacing;
@@ -41,17 +43,15 @@ public class SplatterParticle extends SplatterParticleBase {
         int ly = i & 65535;
 
         Vec3d[] quad;
-        double px = (this.prevPosX + (this.posX - this.prevPosX) * partialTicks - ipx);
-        double py = (this.prevPosY + (this.posY - this.prevPosY) * partialTicks - ipy);
-        double pz = (this.prevPosZ + (this.posZ - this.prevPosZ) * partialTicks - ipz);
+        if (hitOffset == null) {
+            hitOffset = Vec3d.ZERO;
+        }
+        double px = (this.prevPosX + (this.posX - this.prevPosX) * partialTicks - ipx) + hitOffset.x;
+        double py = (this.prevPosY + (this.posY - this.prevPosY) * partialTicks - ipy) + hitOffset.y;
+        double pz = (this.prevPosZ + (this.posZ - this.prevPosZ) * partialTicks - ipz) + hitOffset.z;
         float w = this.particleScale * this.width;
         if (this.onGround && this.finalQuad != null) {
-            quad = new Vec3d[] {
-                    finalQuad[0].add(hitOffset),
-                    finalQuad[1].add(hitOffset),
-                    finalQuad[2].add(hitOffset),
-                    finalQuad[3].add(hitOffset),
-            };
+            quad = finalQuad;
         } else {
             quad = new Vec3d[] {
                     new Vec3d((-rotationX * w - rotationXY * w), (-rotationZ * w), (-rotationYZ * w - rotationXZ * w)),
@@ -112,8 +112,12 @@ public class SplatterParticle extends SplatterParticleBase {
         this.prevPosZ = posZ;
         // recompute vertex overhang if necessary
         this.computeVertexOverhang();
-        if (this.particleAge++ >= this.particleMaxAge) {
+        if (this.checkIsHovering()) {
             this.setExpired();
+            return;
+        } else if (this.particleAge++ >= this.particleMaxAge) {
+            this.setExpired();
+            return;
         }
         for (SplatterParticle p : this.subParticles) {
             p.onUpdate();
@@ -131,6 +135,21 @@ public class SplatterParticle extends SplatterParticleBase {
                 this.setExpired();
             }
         }
+    }
+
+    public boolean checkIsHovering() {
+        if (finalQuad == null) {
+            return false;
+        }
+        int hovering = 0;
+        for (Vec3d vert : finalQuad) {
+            BlockPos pos = new BlockPos(vert.add(this.getPositionVector()).subtract(hitNormal));
+            IBlockState block = world.getBlockState(pos);
+            if (block.getCollisionBoundingBox(world, pos) == null) {
+                hovering++;
+            }
+        }
+        return hovering > ForgeConfigHandler.client.floatingVertexFallThreshold;
     }
 
     public boolean checkIsCovered() {
@@ -207,12 +226,15 @@ public class SplatterParticle extends SplatterParticleBase {
     }
 
 
-    // doesn't work right now
+    // kinda works right now
     private void computeVertexOverhang() {
         if (!this.onGround) {
             return;
         }
         if (!this.canCollide || this.finalQuad == null) {
+            return;
+        }
+        if (!ForgeConfigHandler.client.enableExperimentalOverhangClipping) {
             return;
         }
         Vec3d[] orig = finalQuad.clone();
@@ -358,13 +380,13 @@ public class SplatterParticle extends SplatterParticleBase {
                 float quadOffset = 0;
                 if (origY != dy) {
                     this.posY = pos.getY() + (origY < 0 ? 0 : 1);
-                    quadOffset = -(float)(0.025f * Math.signum(origY) * (0.6f + 0.4f * rand.nextFloat()));
+                    quadOffset = -(float)(0.05f * Math.signum(origY) * (0.6f + 0.4f * rand.nextFloat()));
                 } else if (origX != dx) {
                     this.posX = pos.getX() + (origX < 0 ? 0 : 1);
-                    quadOffset = -(float)(0.025 * Math.signum(origX) * (0.6f + 0.4f * rand.nextFloat()));
+                    quadOffset = -(float)(0.05 * Math.signum(origX) * (0.6f + 0.4f * rand.nextFloat()));
                 } else if (origZ != dz) {
                     this.posZ = pos.getZ() + (origZ < 0 ? 0 : 1);
-                    quadOffset = -(float)(0.025 * Math.signum(origZ) * (0.6f + 0.4f * rand.nextFloat()));
+                    quadOffset = -(float)(0.05 * Math.signum(origZ) * (0.6f + 0.4f * rand.nextFloat()));
                 } else {
                     return;
                 }
