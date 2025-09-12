@@ -46,9 +46,12 @@ public class SplatterParticleBase extends Particle {
     protected ArrayList<SplatterParticle> subParticles;
     protected int subParticleCount = 0;
     protected ParticleSubType subType, oldSubType;
-    protected int emissionRate;
+    protected int ticksSinceLastEmission = 0;
+    protected float emissionRate;
     protected int particleType;
     protected float particleSubVelocity;
+    protected float colorMultiplier = 1.0f;
+    protected float alphaMultiplier = 1.0f;
 
     protected static EntityPlayerSP player;
     protected static float ipx, ipy, ipz;
@@ -76,9 +79,9 @@ public class SplatterParticleBase extends Particle {
         this.emissionRate = 0;
     }
 
-    public void setLifetime(int lifetime, int fadestart) {
+    public void setLifetime(int lifetime, int fadeStart) {
         this.particleMaxAge = lifetime;
-        this.fadeStart = Math.min(fadestart, this.particleMaxAge + 1);
+        this.fadeStart = Math.min(fadeStart, this.particleMaxAge + 1);
     }
 
     public void addSubparticle(SplatterParticle particle) {
@@ -94,6 +97,11 @@ public class SplatterParticleBase extends Particle {
     }
 
     public void setScale(float s) { particleScale = s; }
+
+    public void setMultipliers(float color, float alpha) {
+        colorMultiplier = color;
+        alphaMultiplier = alpha;
+    }
 
     public void setBlendFactors(GlStateManager.SourceFactor source, GlStateManager.DestFactor dest, int op, boolean light) {
         blendSourceFactor = source;
@@ -124,8 +132,8 @@ public class SplatterParticleBase extends Particle {
         }
     }
 
-    public void setEmissionRate(int impactEmissionRate) {
-        this.emissionRate = impactEmissionRate;
+    public void setEmissionRate(float rate) {
+        this.emissionRate = rate;
     }
 
     public void setEmissionVelocity(float particleSubVelocity) {
@@ -149,47 +157,33 @@ public class SplatterParticleBase extends Particle {
     public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
         if (!this.subParticles.isEmpty()) {
             float alpha = 1.0f;
-            if (this.particleAge >= fadeStart) {
-                alpha -= ((float)(this.particleAge - fadeStart) / (float)(this.particleMaxAge - fadeStart));
+            if (this.particleAge >= this.fadeStart) {
+                alpha -= ((float)(this.particleAge - this.fadeStart) / (float)(this.particleMaxAge - this.fadeStart));
             }
             ipx = (float)(player.prevPosX + (player.posX - player.prevPosX) * partialTicks);
             ipy = (float)(player.prevPosY + (player.posY - player.prevPosY) * partialTicks);
             ipz = (float)(player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks);
 
-            boolean startedDrawing = false;
-            for (ParticleSubType type : ParticleSubType.values()) {
-                if (type == ParticleSubType.BASE) {
-                    continue;
-                }
-                for (SplatterParticle sub : this.subParticles) {
-                    // the alpha of each sub-particle only needs to be set once
-                    if (type.ordinal() == 1) {
-                        sub.setAlphaF(alpha);
-                    }
-                    // render particles for each texture type
-                    if (type == sub.subType) {
-                        if (!startedDrawing) {
-                            GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
-                            GlStateManager.glBlendEquation(blendOp);
-                            GlStateManager.enableBlend();
-                            GlStateManager.enableNormalize();
-                            if (lightingEnabled) {
-                                GlStateManager.enableLighting();
-                            } else {
-                                GlStateManager.disableLighting();
-                            }
-                            Minecraft.getMinecraft().getTextureManager().bindTexture(splatterParticleTexture);
-                            buffer.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
-                            startedDrawing = true;
-                        }
-                        sub.renderParticle(buffer, entityIn, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
-                    }
-                }
+            GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
+            GlStateManager.glBlendEquation(blendOp);
+            GlStateManager.enableBlend();
+            GlStateManager.disableNormalize();
+            if (lightingEnabled) {
+                GlStateManager.enableLighting();
+            } else {
+                GlStateManager.disableLighting();
             }
-            if (startedDrawing) {
-                Tessellator.getInstance().draw();
-                GlStateManager.glBlendEquation(32774); // "add" blend function
+            Minecraft.getMinecraft().getTextureManager().bindTexture(splatterParticleTexture);
+            buffer.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
+            for (SplatterParticle sub : this.subParticles) {
+                // set the alpha for the sub-particle
+                sub.setAlphaF(alpha);
+                // render sub-particle and its sub-particles
+                sub.renderParticle(buffer, entityIn, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
             }
+            Tessellator.getInstance().draw();
+            GlStateManager.glBlendEquation(32774); // "add" blend function
+            GlStateManager.enableNormalize();
         }
 
     }
@@ -215,8 +209,8 @@ public class SplatterParticleBase extends Particle {
         if (subParticleCount > ForgeConfigHandler.client.subParticleTotal) {
             return;
         }
-        subParticleCount++;
-        if (emissionRate > 0 && particleAge % emissionRate == 0) {
+        ticksSinceLastEmission++;
+        if (emissionRate > 0 && ticksSinceLastEmission >= (20.0f / emissionRate)) {
             SplatterParticle particle = ClientHelper.makeParticle(
                     particleType, world, getPositionVector(),
                     getDirectionVector().add(
@@ -225,10 +219,11 @@ public class SplatterParticleBase extends Particle {
                     )
             );
             if (particle != null) {
+                subParticleCount++;
                 particle.setScale(ForgeConfigHandler.client.sprayParticleSize);
                 particle.setGravity(ForgeConfigHandler.client.sprayParticleGravity);
                 particle.setParticleSubType(ParticleSubType.SPRAY);
-                particle.setLifetime(ForgeConfigHandler.client.sprayParticleLifetime, ForgeConfigHandler.client.particleFadeStart);
+                particle.setLifetime(ForgeConfigHandler.client.sprayParticleLifetime, ForgeConfigHandler.client.sprayParticleFadeStart);
                 addSubparticle(particle);
             }
         }

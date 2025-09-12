@@ -26,6 +26,7 @@ public class BlendModeHelper {
             }
         }
     }
+
     public static GlStateManager.DestFactor getDestFactor(String mode) {
         if (mode.equalsIgnoreCase("NORMAL")) {
             return GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA;
@@ -43,9 +44,7 @@ public class BlendModeHelper {
             }
         }
     }
-    public static boolean getShouldLight(String mode) {
-        return !(mode.equalsIgnoreCase("BRIGHT") || mode.equalsIgnoreCase("UNLIT"));
-    }
+
     public static int getBlendFunction(String mode) {
         // same modes as net.minecraft.client.renderer.stringToBlendFunction
         if (mode.equalsIgnoreCase("ADD")) {

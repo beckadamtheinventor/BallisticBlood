@@ -1,6 +1,11 @@
 package com.beckadam.splatterizer.handlers;
 
 
+import com.beckadam.splatterizer.particles.ParticleTypeManager;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import net.minecraft.client.util.JsonException;
+import net.minecraft.util.JsonUtils;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
@@ -52,21 +57,30 @@ public class ForgeConfigHandler {
         @Config.Ignore
         public Map<ResourceLocation, Integer> entitySplatterTypeMap = null;
 
-        @Config.Comment("Difficult to edit manually, but this defines all the available splatter types and various per-type values.\nThere will probably be a web UI for this at some point.")
+        @Config.Comment("Difficult to edit manually, but this defines all the splatter types and per-type values.\nThere will probably be a web UI for this at some point.")
         @Config.Name("Splatter Type List")
         public String[] particleConfig = new String[] {
-                "BLOOD=textures/particle/blood_particle.png,1,1,1,4,0.25,MULTIPLY,,MIN",
-                "DUST=textures/particle/dust_particle.png,1,0.1,0.4,0,0.02,NORMAL,,,UNLIT",
-                "ASH=textures/particle/ash_particle.png,1,0.1,0.4,0,0.02,NORMAL",
-                "SLIME=textures/particle/slime_particle.png,0.8,2,1.2,4,0.3,ONE,ONE_MINUS_SRC_COLOR,MAX,UNLIT",
-                "ENDER=textures/particle/ender_particle.png,1,1,1,4,0.25,SRC_ALPHA,SRC_COLOR",
+                "{\"name\":\"BLOOD\",\"texture\":\"splatterizer:textures/particle/blood_particle.png\",\"size\":1," +
+                        "\"gravity\":1,\"velocity\":1,\"spray_rate\":4,\"spray_velocity\":0.25,\"blend\":\"MULTIPLY\"," +
+                        "\"alpha_multiplier\":2.0}",
+                "{\"name\":\"DUST\",\"texture\":\"splatterizer:textures/particle/dust_particle.png\",\"size\":1," +
+                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_rate\":0,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
+                "{\"name\":\"ASH\",\"texture\":\"splatterizer:textures/particle/ash_particle.png\",\"size\":1," +
+                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_rate\":0,\"spray_velocity\":0.02,\"blend\":\"NORMAL\"}",
+                "{\"name\":\"SLIME\",\"texture\":\"splatterizer:textures/particle/slime_particle.png\",\"size\":0.8," +
+                        "\"gravity\":2,\"velocity\":1.2,\"spray_rate\":4,\"spray_velocity\":0.3," +
+                        "\"blend\":\"ONE ONE_MINUS_SRC_ALPHA\",\"blend_op\":\"MAX\",\"lighting\":false," +
+                        "\"color_multiplier\":2.0}",
+                "{\"name\":\"ENDER\",\"texture\":\"splatterizer:textures/particle/ender_particle.png\",\"size\":1," +
+                        "\"gravity\":1,\"velocity\":1,\"spray_rate\":4,\"spray_velocity\":0.25," +
+                        "\"blend\":\"SRC_ALPHA SRC_COLOR\"}",
         };
 
     }
 
 	public static class ClientConfig {
 
-        @Config.Comment("Measured in ticks. There are 20 ticks in a second. This is the lifetime of the initial hit particle emitter")
+        @Config.Comment("Measured in ticks. There are 20 ticks in a second.\nThis is the lifetime of the initial hit particle emitter.\nMake sure this is greater than or equal to the other lifetimes.")
         @Config.Name("Lifetime of splatter particles in ticks")
         public int particleLifetime = 120*20;
 
@@ -105,9 +119,13 @@ public class ForgeConfigHandler {
         @Config.Name("Projectile particle size")
         public float projectileParticleSize = 1.0f;
 
-        @Config.Comment("Measured in ticks. There are 20 ticks in a second.")
+        @Config.Comment("Measured in ticks. There are 20 ticks in a second.\nNote that this lifetime is respected for decal particles produced by projectiles landing as well.")
         @Config.Name("Projectile particle lifetime in ticks")
-        public int projectileParticleLifetime = 15*20;
+        public int projectileParticleLifetime = 120*20;
+
+        @Config.Comment("Measured in ticks. There are 20 ticks in a second.\nNote that this doesn't work for all blend modes!")
+        @Config.Name("Projectile particle fade start in ticks")
+        public int projectileParticleFadeStart = 100*20;
 
         @Config.Comment("Multiplied by other values to get final value.")
         @Config.Name("Spray particle velocity")
@@ -124,6 +142,10 @@ public class ForgeConfigHandler {
         @Config.Comment("Measured in ticks. There are 20 ticks in a second.")
         @Config.Name("Spray particle lifetime in ticks")
         public int sprayParticleLifetime = 3*20;
+
+        @Config.Comment("Measured in ticks. There are 20 ticks in a second.\nNote that this doesn't work for all blend modes!")
+        @Config.Name("Spray particle fade start in ticks")
+        public int sprayParticleFadeStart = 20;
 
         @Config.Name("Enable/Disable splatter particles entirely")
         public boolean enableSplatterParticles = true;
@@ -157,46 +179,93 @@ public class ForgeConfigHandler {
 	}
 
     public static class ParticleConfig {
+        public final int type;
+        public final String typeName;
         public final float velocity;
         public final float gravity;
         public final float size;
-        public final String typeName;
         public final ResourceLocation texture;
-        public final int type;
         public final String[] blendMode;
-        public final int impactEmissionRate;
-        public final float impactEmissionVelocity;
+        public final boolean lighting;
+        public final String blendOp;
+        public final float emissionRate;
+        public final float emissionVelocity;
+        public final float colorMultiplier;
+        public final float alphaMultiplier;
 
-        public ParticleConfig(
-                int typeNum, String typeName, String tex, float size, float gravity, float velocity,
-                int impactEmissionRate, float impactEmissionVelocity, String blendMode
-        ) {
-            this.type = typeNum;
-            this.typeName = typeName;
-            this.texture = new ResourceLocation(SplatterizerMod.MODID, tex);
-            this.gravity = gravity;
-            this.velocity = velocity;
-            this.size = size;
-            this.blendMode = new String[] {"","","",""};
-            this.impactEmissionRate = impactEmissionRate;
-            this.impactEmissionVelocity = impactEmissionVelocity;
-            String[] modes = blendMode.split(",");
-            if (modes.length == 1) {
-                this.blendMode[0] = this.blendMode[1] = modes[0];
-            } else if (modes.length >= 2) {
-                this.blendMode[0] = modes[0];
-                if (modes[1].isEmpty()) {
-                    this.blendMode[1] = modes[0];
-                } else {
-                    this.blendMode[1] = modes[1];
-                }
-                if (modes.length >= 3) {
-                    this.blendMode[2] = modes[2];
-                }
-                if (modes.length >= 4) {
-                    this.blendMode[3] = modes[3];
-                }
+        public ParticleConfig(String config) throws JsonException {
+            JsonObject json = new JsonParser().parse(config).getAsJsonObject();
+            if (!JsonUtils.hasField(json, "name")) {
+                throw new JsonException("missing name in particle config!");
             }
+            if (!JsonUtils.hasField(json, "texture")) {
+                throw new JsonException("missing texture in particle config!");
+            }
+            typeName = JsonUtils.getString(json, "name");
+            String tex = JsonUtils.getString(json, "texture");
+            if (!tex.contains(":")) {
+                throw new JsonException("missing mod id in texture resource location!");
+            }
+            texture = new ResourceLocation(tex);
+            if (JsonUtils.hasField(json, "size")) {
+                size = JsonUtils.getFloat(json, "size");
+            } else {
+                size = 1.0f;
+            }
+            if (JsonUtils.hasField(json, "velocity")) {
+                velocity = JsonUtils.getFloat(json, "velocity");
+            } else {
+                velocity = 1.0f;
+            }
+            if (JsonUtils.hasField(json, "gravity")) {
+                gravity = JsonUtils.getFloat(json, "gravity");
+            } else {
+                gravity = 1.0f;
+            }
+            if (JsonUtils.hasField(json, "spray_velocity")) {
+                emissionVelocity = JsonUtils.getFloat(json, "spray_velocity");
+            } else {
+                emissionVelocity = 1.0f;
+            }
+            if (JsonUtils.hasField(json, "spray_rate")) {
+                emissionRate = JsonUtils.getFloat(json, "spray_rate");
+            } else {
+                emissionRate = 0.0f;
+            }
+            blendMode = new String[2];
+            blendMode[0] = blendMode[1] = "NORMAL";
+            if (JsonUtils.hasField(json, "blend_mode")) {
+                String[] mode = JsonUtils.getString(json, "blend_mode").split(" ");
+                if (mode.length == 1) {
+                    blendMode[0] = blendMode[1] = mode[0];
+                } else if (mode.length >= 2) {
+                    blendMode[0] = mode[0];
+                    blendMode[1] = mode[1];
+                }
+            } else {
+                blendMode[0] = blendMode[1] = "NORMAL";
+            }
+            if (JsonUtils.hasField(json, "blend_op")) {
+                blendOp = JsonUtils.getString(json, "blend_op");
+            } else {
+                blendOp = "ADD";
+            }
+            if (JsonUtils.hasField(json, "lighting")) {
+                lighting = JsonUtils.getBoolean(json, "lighting");
+            } else {
+                lighting = true;
+            }
+            if (JsonUtils.hasField(json, "color_multiplier")) {
+                colorMultiplier = JsonUtils.getFloat(json, "color_multiplier");
+            } else {
+                colorMultiplier = 1.0f;
+            }
+            if (JsonUtils.hasField(json, "alpha_multiplier")) {
+                alphaMultiplier = JsonUtils.getFloat(json, "alpha_multiplier");
+            } else {
+                alphaMultiplier = 1.0f;
+            }
+            type = SplatterizerMod.particleTypes.add(typeName);
         }
     }
 
@@ -213,23 +282,10 @@ public class ForgeConfigHandler {
         }
         SplatterizerMod.particleTypes.init();
         for (String s : server.particleConfig) {
-            String[] a = s.split("=", 2);
-            String[] a2 = null;
-            if (a.length == 2) {
-                a2 = a[1].split(",", 7);
-            }
-            if (a.length != 2 || a2.length < 7) {
-                SplatterizerMod.LOGGER.log(Level.WARN, "Invalid particle type config: \"" + s + "\"");
-                continue;
-            }
-            int num = SplatterizerMod.particleTypes.add(a[0]);
             try {
-                ParticleConfig conf = new ParticleConfig(
-                        num, a[0], a2[0], Float.parseFloat(a2[1]), Float.parseFloat(a2[2]), Float.parseFloat(a2[3]),
-                        Integer.parseInt(a2[4]), Float.parseFloat(a2[5]), a2[6]
-                );
-                particleConfigMap.put(a[0], conf);
-                particleConfigIntMap.put(num, conf);
+                ParticleConfig conf = new ParticleConfig(s);
+                particleConfigMap.put(conf.typeName, conf);
+                particleConfigIntMap.put(conf.type, conf);
             } catch (Exception err) {
                 SplatterizerMod.LOGGER.log(Level.ERROR, "Failed to parse particle type config: \"" + s + "\"");
                 continue;

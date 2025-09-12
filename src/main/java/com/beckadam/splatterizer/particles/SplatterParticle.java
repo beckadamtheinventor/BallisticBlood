@@ -1,7 +1,5 @@
 package com.beckadam.splatterizer.particles;
 
-import com.beckadam.splatterizer.SplatterizerMod;
-import com.beckadam.splatterizer.helpers.ClientHelper;
 import com.beckadam.splatterizer.helpers.CommonHelper;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -9,30 +7,34 @@ import net.minecraft.entity.Entity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;
-import org.apache.logging.log4j.Level;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 
 public class SplatterParticle extends SplatterParticleBase {
-    protected boolean hFlip, vFlip;
-    protected int displayMatrixWidth;
-    protected boolean[] displayMatrix;
+    protected boolean hFlip, vFlip, rotate;
+//    protected int displayMatrixWidth;
+//    protected boolean[] displayMatrix;
 
     public SplatterParticle(World world, double x, double y, double z, double vx, double vy, double vz) {
         super(world, x, y, z, vx, vy, vz);
         hFlip = vFlip = false;
     }
 
-    public void setFlip(boolean h, boolean v) {
+    public void setFlip(boolean h, boolean v, boolean r) {
         hFlip = h;
         vFlip = v;
+        rotate = r;
     }
 
     @Override
     public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
+        float alpha = 1.0f;
+        if (this.particleAge >= this.fadeStart) {
+            alpha -= ((float)(this.particleAge - this.fadeStart) / (float)(this.particleMaxAge - this.fadeStart));
+        }
+        alpha *= this.particleAlpha;
+
         int i = this.getBrightnessForRender(partialTicks);
         int lx = (i >> 16) & 65535;
         int ly = i & 65535;
@@ -59,11 +61,20 @@ public class SplatterParticle extends SplatterParticleBase {
         float v1 = v0 + 1.0f / particleTextureHeight;
         if (this.hFlip) {
             float t = u0;
-            u0 = u1; u1 = t;
+            u0 = u1;
+            u1 = t;
         }
         if (this.vFlip) {
             float t = v0;
-            v0 = v1; v1 = t;
+            v0 = v1;
+            v1 = t;
+        }
+        if (this.rotate) {
+            float t = u0;
+            u0 = u1;
+            u1 = v1;
+            v1 = v0;
+            v0 = t;
         }
 
 //        GlStateManager.disableLighting();
@@ -71,16 +82,20 @@ public class SplatterParticle extends SplatterParticleBase {
 //        GL11.glPushMatrix();
         buffer.pos(px + quad[0].x, py + quad[0].y, pz + quad[0].z)
                 .tex(finalUVs[0].x+u1, finalUVs[0].y+v1)
-                .color(1, 1, 1, particleAlpha).lightmap(lx, ly).endVertex();
+                .color(colorMultiplier, colorMultiplier, colorMultiplier, alphaMultiplier*alpha)
+                .lightmap(lx, ly).endVertex();
         buffer.pos(px + quad[1].x, py + quad[1].y, pz + quad[1].z)
                 .tex(finalUVs[1].x+u1, finalUVs[1].y+v0)
-                .color(1, 1, 1, particleAlpha).lightmap(lx, ly).endVertex();
+                .color(colorMultiplier, colorMultiplier, colorMultiplier, alphaMultiplier*alpha)
+                .lightmap(lx, ly).endVertex();
         buffer.pos(px + quad[2].x, py + quad[2].y, pz + quad[2].z)
                 .tex(finalUVs[2].x+u0, finalUVs[2].y+v0)
-                .color(1, 1, 1, particleAlpha).lightmap(lx, ly).endVertex();
+                .color(colorMultiplier, colorMultiplier, colorMultiplier, alphaMultiplier*alpha)
+                .lightmap(lx, ly).endVertex();
         buffer.pos(px + quad[3].x, py + quad[3].y, pz + quad[3].z)
                 .tex(finalUVs[3].x+u0, finalUVs[3].y+v1)
-                .color(1, 1, 1, particleAlpha).lightmap(lx, ly).endVertex();
+                .color(colorMultiplier, colorMultiplier, colorMultiplier, alphaMultiplier*alpha)
+                .lightmap(lx, ly).endVertex();
 //        GL11.glPopMatrix();
     }
 

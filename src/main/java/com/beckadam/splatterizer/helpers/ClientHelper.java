@@ -45,8 +45,8 @@ public class ClientHelper {
         }
         GlStateManager.SourceFactor srcFactor = BlendModeHelper.getSourceFactor(cfg.blendMode[0]);
         GlStateManager.DestFactor destFactor = BlendModeHelper.getDestFactor(cfg.blendMode[1]);
-        int blendOp = BlendModeHelper.getBlendFunction(cfg.blendMode[2]);
-        boolean lightingEnabled = BlendModeHelper.getShouldLight(cfg.blendMode[3]);
+        int blendOp = BlendModeHelper.getBlendFunction(cfg.blendOp);
+        boolean lightingEnabled = cfg.lighting;
 //        SplatterizerMod.LOGGER.log(Level.INFO, "srcFactor: " + srcFactor + ", destFactor: " + destFactor + ", blendOp: " + blendOp + ", lighting: " + lightingEnabled);
 
         // Note: the main particle is just the spray emitter and doesn't render
@@ -62,10 +62,13 @@ public class ClientHelper {
             mainParticle.setGravity(0.0f);
 
             // set the rate at which the impact particle emits spray particles
-            mainParticle.setEmissionRate(cfg.impactEmissionRate);
+            mainParticle.setEmissionRate(cfg.emissionRate);
 
             // set the velocity for emitted spray particles
-            mainParticle.setEmissionVelocity(cfg.impactEmissionVelocity);
+            mainParticle.setEmissionVelocity(cfg.emissionVelocity);
+
+            // set the values to multiply texture color/alpha with when drawing
+            mainParticle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);
 
             // create projectiles depending on config and damage amount
             for (int index = 0; index < count; index++) {
@@ -92,7 +95,10 @@ public class ClientHelper {
                     particle.setScale(ForgeConfigHandler.client.projectileParticleSize);
 
                     // set lifetime specific to this projectile
-                    particle.setLifetime(ForgeConfigHandler.client.projectileParticleLifetime, ForgeConfigHandler.client.particleFadeStart);
+                    particle.setLifetime(ForgeConfigHandler.client.projectileParticleLifetime, ForgeConfigHandler.client.projectileParticleFadeStart);
+
+                    // set the values to multiply texture color/alpha with when drawing
+                    particle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);
 
                     // add the projectile particle to the main impact particle
                     mainParticle.addSubparticle(particle);
@@ -130,7 +136,7 @@ public class ClientHelper {
             particle.setType(type);
 //            particle.setTexture(cfg.texture);
             particle.setGravity(cfg.gravity);
-            particle.setFlip(random.nextBoolean(), random.nextBoolean());
+            particle.setFlip(random.nextBoolean(), random.nextBoolean(), random.nextBoolean());
             return particle;
         }
         return null;
