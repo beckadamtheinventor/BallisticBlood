@@ -58,6 +58,9 @@ public class ClientHelper {
             // set the particle subtype so the main impact particle doesn't get rendered
             mainParticle.setParticleSubType(ParticleSubType.IMPACT);
 
+            // randomize the particle texture
+            mainParticle.randomizeParticleTexture();
+
             // set no gravity so it stays in the same position
             mainParticle.setGravity(0.0f);
 
@@ -66,6 +69,12 @@ public class ClientHelper {
 
             // set the velocity for emitted spray particles
             mainParticle.setEmissionVelocity(cfg.emissionVelocity);
+
+            // set the values to multiply texture color/alpha with when drawing
+            mainParticle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);
+
+            // set color/alpha blending factors
+            mainParticle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
 
             // set the values to multiply texture color/alpha with when drawing
             mainParticle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);
@@ -88,17 +97,11 @@ public class ClientHelper {
                     // set gravity from config
                     particle.setGravity(ForgeConfigHandler.client.projectileParticleGravity);
 
-                    // set color/alpha blending factors
-                    particle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
-
                     // set scale from config
                     particle.setScale(ForgeConfigHandler.client.projectileParticleSize);
 
                     // set lifetime specific to this projectile
                     particle.setLifetime(ForgeConfigHandler.client.projectileParticleLifetime, ForgeConfigHandler.client.projectileParticleFadeStart);
-
-                    // set the values to multiply texture color/alpha with when drawing
-                    particle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);
 
                     // add the projectile particle to the main impact particle
                     mainParticle.addSubparticle(particle);

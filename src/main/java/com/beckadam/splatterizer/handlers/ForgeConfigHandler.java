@@ -61,8 +61,7 @@ public class ForgeConfigHandler {
         @Config.Name("Splatter Type List")
         public String[] particleConfig = new String[] {
                 "{\"name\":\"BLOOD\",\"texture\":\"splatterizer:textures/particle/blood_particle.png\",\"size\":1," +
-                        "\"gravity\":1,\"velocity\":1,\"spray_rate\":4,\"spray_velocity\":0.25,\"blend\":\"MULTIPLY\"," +
-                        "\"alpha_multiplier\":2.0}",
+                        "\"gravity\":1,\"velocity\":1,\"spray_rate\":4,\"spray_velocity\":0.25,\"blend\":\"NORMAL\"}",
                 "{\"name\":\"DUST\",\"texture\":\"splatterizer:textures/particle/dust_particle.png\",\"size\":1," +
                         "\"gravity\":0.1,\"velocity\":0.4,\"spray_rate\":0,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
                 "{\"name\":\"ASH\",\"texture\":\"splatterizer:textures/particle/ash_particle.png\",\"size\":1," +
@@ -91,9 +90,9 @@ public class ForgeConfigHandler {
         @Config.Name("Radius of splatter spread in quarter-circles")
         public float particleSpreadSize = 1.0f;
 
-        @Config.Comment("Measured in blocks per second squared. Default value (9.81) is Earth gravity. Multiplied by other values to get final value.")
+        @Config.Comment("Measured in blocks per second squared. 9.81 is Earth gravity. Multiplied by other values to get final value.")
         @Config.Name("Gravity multiplier for all particles")
-        public float particleGravityBase = 9.81f;
+        public float particleGravityBase = 1.0f;
 
         @Config.Comment("Measured in blocks. Multiplied by other values to get final value.")
         @Config.Name("Base size of particles")
@@ -290,7 +289,7 @@ public class ForgeConfigHandler {
                 SplatterizerMod.LOGGER.log(Level.ERROR, "Failed to parse particle type config: \"" + s + "\"");
                 continue;
             }
-            SplatterizerMod.LOGGER.log(Level.INFO, s);
+//            SplatterizerMod.LOGGER.log(Level.INFO, s);
         }
         if (server.entitySplatterTypeMap == null) {
             server.entitySplatterTypeMap = new HashMap<>();
@@ -302,7 +301,7 @@ public class ForgeConfigHandler {
             if (a.length == 2) {
                 int num = SplatterizerMod.particleTypes.get(a[1]);
                 server.entitySplatterTypeMap.put(new ResourceLocation(a[0]), num);
-                SplatterizerMod.LOGGER.log(Level.INFO, a[0] + " = " + a[1]);
+//                SplatterizerMod.LOGGER.log(Level.INFO, a[0] + " = " + a[1]);
             } else {
                 SplatterizerMod.LOGGER.log(Level.WARN, "Invalid splatter type mapping: \"" + s + "\"");
             }

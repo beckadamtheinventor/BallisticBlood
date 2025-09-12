@@ -1,6 +1,5 @@
 package com.beckadam.splatterizer.particles;
 
-import com.beckadam.splatterizer.SplatterizerMod;
 import com.beckadam.splatterizer.helpers.ClientHelper;
 import com.beckadam.splatterizer.helpers.CommonHelper;
 import net.minecraft.client.Minecraft;
@@ -18,7 +17,6 @@ import net.minecraft.world.World;
 import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.apache.logging.log4j.Level;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,10 +36,10 @@ public class SplatterParticleBase extends Particle {
     protected int fadeStart;
     protected float decalScale;
 
-    protected List<AxisAlignedBB> worldCollisionBoxes;
     protected Vec3d hitNormal;
+    protected Vec3d hitOffset;
     protected Vec3d[] finalQuad;
-    protected Vec2f[] finalUVs;
+    protected Vec2f[] finalUVOffsets;
     protected EnumFacing facing;
     protected ArrayList<SplatterParticle> subParticles;
     protected int subParticleCount = 0;
@@ -56,8 +54,6 @@ public class SplatterParticleBase extends Particle {
     protected static EntityPlayerSP player;
     protected static float ipx, ipy, ipz;
 
-    //    protected Vec3d facing;
-
     public SplatterParticleBase(World world, double x, double y, double z, double vx, double vy, double vz) {
         super(world, x, y, z);
         setParticleTextureIndex(rand.nextInt((int)particleTextureWidth));
@@ -71,7 +67,7 @@ public class SplatterParticleBase extends Particle {
         this.decalScale = ForgeConfigHandler.client.decalScale;
         this.particleMaxAge = ForgeConfigHandler.client.particleLifetime;
         this.fadeStart = Math.min(ForgeConfigHandler.client.particleFadeStart, this.particleMaxAge + 1);
-        finalUVs = new Vec2f[] { Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO };
+        finalUVOffsets = new Vec2f[] { Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO };
         subParticles = new ArrayList<>();
         subType = ParticleSubType.BASE;
         splatterParticleTexture = null;
@@ -116,14 +112,15 @@ public class SplatterParticleBase extends Particle {
 
     public void setParticleSubType(ParticleSubType type) {
         subType = type;
-        switch (type) {
+    }
+    public void randomizeParticleTexture() {
+        switch (subType) {
             case PROJECTILE:
             case DECAL:
                 this.particleTextureIndexY = rand.nextInt(5); // rows 0, 1, 2, 3, 4
                 break;
             case SPRAY:
-                this.particleTextureIndexY = rand.nextInt(3) + 4; // rows 5, 6, 7
-                SplatterizerMod.LOGGER.log(Level.INFO, "SPRAY particleTextureIndexY = " + this.particleTextureIndexY);
+                this.particleTextureIndexY = rand.nextInt(3) + 5; // rows 5, 6, 7
                 break;
             case IMPACT:
             case BASE:
@@ -164,8 +161,8 @@ public class SplatterParticleBase extends Particle {
             ipy = (float)(player.prevPosY + (player.posY - player.prevPosY) * partialTicks);
             ipz = (float)(player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks);
 
-            GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
             GlStateManager.glBlendEquation(blendOp);
+            GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
             GlStateManager.enableBlend();
             GlStateManager.disableNormalize();
             if (lightingEnabled) {
@@ -198,15 +195,12 @@ public class SplatterParticleBase extends Particle {
         for (SplatterParticle sub : this.subParticles) {
             sub.onUpdate();
         }
-        this.subParticles.removeIf(splatterSubParticle -> !splatterSubParticle.isAlive());
-        spawnSubParticles(ForgeConfigHandler.client.particleSpreadMax);
+        this.subParticles.removeIf(p -> !p.isAlive());
+        spawnSubParticles();
     }
 
-    protected void spawnSubParticles(int maximum) {
-        if (this.subParticles.size() >= maximum) {
-            return;
-        }
-        if (subParticleCount > ForgeConfigHandler.client.subParticleTotal) {
+    protected void spawnSubParticles() {
+        if (subParticleCount >= ForgeConfigHandler.client.subParticleTotal) {
             return;
         }
         ticksSinceLastEmission++;
@@ -224,6 +218,7 @@ public class SplatterParticleBase extends Particle {
                 particle.setGravity(ForgeConfigHandler.client.sprayParticleGravity);
                 particle.setParticleSubType(ParticleSubType.SPRAY);
                 particle.setLifetime(ForgeConfigHandler.client.sprayParticleLifetime, ForgeConfigHandler.client.sprayParticleFadeStart);
+                particle.randomizeParticleTexture();
                 addSubparticle(particle);
             }
         }
