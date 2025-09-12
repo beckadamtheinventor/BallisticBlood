@@ -1,0 +1,95 @@
+<html>
+    <head>
+        <title>Splatterizer Config Wizard</title>
+        <style>
+            textarea {
+                width: 50%;
+                height: 20%;
+            }
+            input {
+                width: 20%;
+            }
+        </style>
+    </head>
+    <body>
+        <script>
+            function parse() {
+                let typeName = document.getElementById("typeName").value
+                let texture = document.getElementById("texture").value
+                let size = parseFloat(document.getElementById("size").value)
+                let velocity = parseFloat(document.getElementById("velocity").value)
+                let gravity = parseFloat(document.getElementById("gravity").value)
+                let sprayVelocity = parseFloat(document.getElementById("sprayVelocity").value)
+                let sprayRate = parseFloat(document.getElementById("sprayRate").value)
+                let lighting = (document.getElementById("lighting").value == "true")
+                let colorMultiplier = parseFloat(document.getElementById("colorMultiplier").value)
+                let alphaMultiplier = parseFloat(document.getElementById("alphaMultiplier").value)
+                let blendMode = parseFloat(document.getElementById("blendMode").value)
+                let blendOp = document.getElementById("blendOp").value
+                let generated = document.getElementById("generated")
+                generated.innerHTML = JSON.stringify({
+                    name: typeName,
+                    texture: texture,
+                    size: size,
+                    velocity: velocity,
+                    gravity: gravity,
+                    spray_velocity: sprayVelocity,
+                    spray_rate: sprayRate,
+                    lighting: lighting,
+                    color_multiplier: colorMultiplier,
+                    alpha_multiplier: alphaMultiplier,
+                    blend_mode: blendMode,
+                    blend_op: blendOp
+                })
+            }
+        </script>
+        <main>
+            <p>
+                <h1>Splatterizer Config Wizard</h1>
+                <h2>Particle type config</h2>
+            </p>
+            <p>
+                <input type="string" id="typeName" value="BLOOD">
+                <label>Name</label>
+                <br>
+                <input type="string" id="texture" value="splatterizer:textures/particle/blood_particle.png">
+                <label>Namespaced texture atlas</label>
+                <br>
+                <input type="number" id="size" value="1.0">
+                <label>Size Mutliplier</label>
+                <br>
+                <input type="number" id="velocity" value="1.0">
+                <label>Velocity Mutliplier</label>
+                <br>
+                <input type="number" id="gravity" value="1.0">
+                <label>Gravity Mutliplier</label>
+                <br>
+                <input type="number" id="sprayVelocity" value="1.0">
+                <label>Spray Velocity Mutliplier</label>
+                <br>
+                <input type="number" id="sprayRate" value="0.0">
+                <label>Spray Emission Rate (particles per second)</label>
+                <br>
+                <input type="checkbox" id="lighting" value="true">
+                <label>Enable Lighting</label>
+                <br>
+                <input type="number" id="colorMultiplier" value="1.0">
+                <label>Color Mutliplier</label>
+                <br>
+                <input type="number" id="alphaMultiplier" value="1.0">
+                <label>Alpha Mutliplier</label>
+                <br>
+                <input type="string" id="blendMode" value="NORMAL">
+                <label>Blend mode</label>
+                <br>
+                <input type="string" id="blendOp" value="ADD">
+                <label>Blend op</label>
+                <br>
+                <hr>
+                <button onclick="parse()">Generate!</button>
+                <hr>
+                <textarea readonly contenteditable="false" id="generated"></textarea>
+            </p>
+        </main>
+    </body>
+</html>
