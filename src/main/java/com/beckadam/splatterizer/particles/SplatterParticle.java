@@ -377,7 +377,7 @@ public class SplatterParticle extends SplatterParticleBase {
                 // figure out which face the particle landed on
                 computeFacing(dx, dy, dz, origX, origY, origZ);
                 BlockPos pos = new BlockPos(posX, posY, posZ);
-                float quadOffset = ForgeConfigHandler.client.decalSurfaceOffsetMultiplier * (0.75f * rand.nextFloat() + 0.25f);
+                float quadOffset = -ForgeConfigHandler.client.decalSurfaceOffsetMultiplier * (0.6f * rand.nextFloat() + 0.4f);
                 if (origY != dy) {
                     this.posY = pos.getY() + (origY < 0 ? 0 : 1);
                     quadOffset *= (float)Math.signum(origY);
