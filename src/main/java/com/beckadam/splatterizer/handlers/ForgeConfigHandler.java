@@ -86,6 +86,9 @@ public class ForgeConfigHandler {
         @Config.RangeInt(min=0, max=4)
         public int floatingVertexFallThreshold = 2;
 
+        @Config.Comment("(advanced) set the surface offset multiplier for decal particles landed on surfaces")
+        @Config.Name("Decal surface offset mutliplier")
+        public float decalSurfaceOffsetMultiplier = 0.01f;
 
         @Config.Comment("Measured in ticks. There are 20 ticks in a second.\nThis is the lifetime of the initial hit particle emitter.\nMake sure this is greater than or equal to the other lifetimes.")
         @Config.Name("Lifetime of splatter particles in ticks")
