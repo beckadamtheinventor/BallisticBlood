@@ -1,5 +1,6 @@
 package com.beckadam.ballisticblood.particles;
 
+import com.beckadam.ballisticblood.BallisticBloodMod;
 import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
 import com.beckadam.ballisticblood.helpers.CommonHelper;
 import net.minecraft.block.state.IBlockState;
@@ -8,6 +9,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;
+import org.apache.logging.log4j.Level;
 
 import java.util.List;
 
@@ -112,9 +114,22 @@ public class SplatterParticle extends SplatterParticleBase {
         this.prevPosZ = posZ;
         // recompute vertex overhang if necessary
         this.computeVertexOverhang();
-        if (this.checkIsHovering()) {
-            this.setExpired();
-            return;
+        if (this.onGround && this.checkIsHovering()) {
+            if (ForgeConfigHandler.client.particlePopOffMultiplier > 0) {
+                // "pop off"
+                Vec3d rvec = CommonHelper.GetRandomNormalizedVector()
+                        .add(this.hitNormal).scale(ForgeConfigHandler.client.particlePopOffMultiplier);
+                this.motionX += rvec.x;
+                this.motionY += rvec.y;
+                this.motionZ += rvec.z;
+                this.posX += this.motionX;
+                this.posY += this.motionY;
+                this.posZ += this.motionZ;
+                this.onGround = false;
+            } else {
+                this.setExpired();
+                return;
+            }
         } else if (this.particleAge++ >= this.particleMaxAge) {
             this.setExpired();
             return;
@@ -305,19 +320,19 @@ public class SplatterParticle extends SplatterParticleBase {
             if (hitNormal.x == 0) {
                 if (hitNormal.y == 0) {
                     finalUVOffsets[i] = new Vec2f(
-                            finalUVOffsets[i].x-(float)(finalQuad[i].x-orig[i].x)/(decalScale * width * particleTextureWidth),
-                            finalUVOffsets[i].y-(float)(finalQuad[i].y-orig[i].y)/(decalScale * width * particleTextureHeight)
+                            finalUVOffsets[i].x+(float)(finalQuad[i].x-orig[i].x)/(decalScale * width * particleTextureWidth),
+                            finalUVOffsets[i].y+(float)(finalQuad[i].y-orig[i].y)/(decalScale * width * particleTextureHeight)
                     );
                 } else if (hitNormal.z == 0) {
                     finalUVOffsets[i] = new Vec2f(
-                            finalUVOffsets[i].x-(float)(finalQuad[i].x-orig[i].x)/(decalScale * width * particleTextureWidth),
-                            finalUVOffsets[i].y-(float)(finalQuad[i].z-orig[i].z)/(decalScale * width * particleTextureHeight)
+                            finalUVOffsets[i].x+(float)(finalQuad[i].z-orig[i].z)/(decalScale * width * particleTextureWidth),
+                            finalUVOffsets[i].y+(float)(finalQuad[i].x-orig[i].x)/(decalScale * width * particleTextureHeight)
                     );
                 }
             } else if (hitNormal.y == 0) {
                 finalUVOffsets[i] = new Vec2f(
-                        finalUVOffsets[i].x-(float)(finalQuad[i].y-orig[i].y)/(decalScale * width * particleTextureWidth),
-                        finalUVOffsets[i].y-(float)(finalQuad[i].z-orig[i].z)/(decalScale * width * particleTextureHeight)
+                        finalUVOffsets[i].x+(float)(finalQuad[i].y-orig[i].y)/(decalScale * width * particleTextureWidth),
+                        finalUVOffsets[i].y+(float)(finalQuad[i].z-orig[i].z)/(decalScale * width * particleTextureHeight)
                 );
             }
         }
@@ -369,7 +384,6 @@ public class SplatterParticle extends SplatterParticleBase {
 
         // if the particle ran into something
         if (origX != dx || origY != dy || origZ != dz) {
-//            SplatterizerMod.LOGGER.log(Level.INFO, "Landed!" + (onGround ? " Already on ground." : ""));
             // if the particle is not already on the ground,
             // compute a quad for the axis it landed on and
             // offset the position against the normal direction to minimize Z-fighting
@@ -377,30 +391,26 @@ public class SplatterParticle extends SplatterParticleBase {
                 // figure out which face the particle landed on
                 computeFacing(dx, dy, dz, origX, origY, origZ);
                 BlockPos pos = new BlockPos(posX, posY, posZ);
-                float quadOffset = -ForgeConfigHandler.client.decalSurfaceOffsetMultiplier * (0.6f * rand.nextFloat() + 0.4f);
-                if (origY != dy) {
+                float quadOffset = -ForgeConfigHandler.client.decalSurfaceOffsetMultiplier * (0.5f * rand.nextFloat() + 0.5f);
+                if (facing == EnumFacing.UP || facing == EnumFacing.DOWN) {
                     this.posY = pos.getY() + (origY < 0 ? 0 : 1);
                     quadOffset *= (float)Math.signum(origY);
-                } else if (origX != dx) {
+                } else if (facing == EnumFacing.EAST || facing == EnumFacing.WEST) {
                     this.posX = pos.getX() + (origX < 0 ? 0 : 1);
-                    quadOffset *= (float)Math.signum(origX);
-                } else if (origZ != dz) {
+                    quadOffset = (float)(quadOffset*Math.signum(origX) - SMALL_AMOUNT * 1.8f);
+                } else if (facing == EnumFacing.NORTH || facing == EnumFacing.SOUTH) {
                     this.posZ = pos.getZ() + (origZ < 0 ? 0 : 1);
-                    quadOffset *= (float)Math.signum(origZ);
+                    quadOffset = (float)(quadOffset*Math.signum(origZ) - SMALL_AMOUNT * (origZ < 0 ? 1.666f : 2.0f));
                 } else {
                     return;
                 }
-
                 // spray particles don't make decals
                 if (this.subType == ParticleSubType.SPRAY) {
                     this.setExpired();
                 } else {
                     // particle just hit the ground, fix it in position,
                     // generate decal quad that is separate from the bounding box
-                    this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, 1.0);
-                    for (int i=0; i<this.finalQuad.length; i++) {
-                        this.finalQuad[i] = this.finalQuad[i].scale(this.width * this.decalScale);
-                    }
+                    this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.width * this.decalScale);
                     this.hitOffset = this.hitNormal.scale(quadOffset);
 
                     this.onGround = true;

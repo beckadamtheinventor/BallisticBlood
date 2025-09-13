@@ -89,6 +89,10 @@ public class ForgeConfigHandler {
         @Config.Name("Decal surface offset mutliplier")
         public float decalSurfaceOffsetMultiplier = 0.01f;
 
+        @Config.Comment("Rough distance to move decal textures when considered midair. Set to 0 to disable this mechanic.")
+        @Config.Name("Decal pop-off multiplier")
+        public float particlePopOffMultiplier = 0.1f;
+
         @Config.Comment("Measured in ticks. There are 20 ticks in a second.\nThis is the lifetime of the initial hit particle emitter.\nMake sure this is greater than or equal to the other lifetimes.")
         @Config.Name("Lifetime of splatter particles in ticks")
         public int particleLifetime = 120*20;
@@ -100,9 +104,9 @@ public class ForgeConfigHandler {
         @Config.Name("Radius of splatter spread in quarter-circles")
         public float particleSpreadSize = 1.0f;
 
-        @Config.Comment("Measured in blocks per second squared. 9.81 is Earth gravity. Multiplied by other values to get final value.")
+        @Config.Comment("Measured in blocks per second. 9.81 is Earth gravity. Multiplied by other values to get final value.")
         @Config.Name("Gravity multiplier for all particles")
-        public float particleGravityBase = 1.0f;
+        public float particleGravityBase = 0.981f;
 
         @Config.Comment("Measured in blocks. Multiplied by other values to get final value.")
         @Config.Name("Base size of particles")
