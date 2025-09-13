@@ -1,6 +1,6 @@
-package com.beckadam.splatterizer.handlers;
+package com.beckadam.ballisticblood.handlers;
 
-import com.beckadam.splatterizer.SplatterizerMod;
+import com.beckadam.ballisticblood.BallisticBloodMod;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.fml.common.eventhandler.EventBus;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -8,7 +8,7 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 public class AttackEntityFromHandler {
     @SubscribeEvent
     public static void LivingDamageEvent(LivingDamageEvent event) {
-        SplatterizerMod.PROXY.AttackEntityFromHandler(event.getEntity(), event.getSource(), event.getAmount());
+        BallisticBloodMod.PROXY.AttackEntityFromHandler(event.getEntity(), event.getSource(), event.getAmount());
     }
 
     public static void register(EventBus eventBus) {

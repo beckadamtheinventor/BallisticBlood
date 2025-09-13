@@ -1,7 +1,7 @@
-package com.beckadam.splatterizer.message;
+package com.beckadam.ballisticblood.message;
 
-import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import com.beckadam.splatterizer.helpers.ClientHelper;
+import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
+import com.beckadam.ballisticblood.helpers.ClientHelper;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;

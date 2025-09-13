@@ -1,6 +1,6 @@
-package com.beckadam.splatterizer.handlers;
+package com.beckadam.ballisticblood.handlers;
 
-import com.beckadam.splatterizer.SplatterizerMod;
+import com.beckadam.ballisticblood.SplatterizerMod;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;

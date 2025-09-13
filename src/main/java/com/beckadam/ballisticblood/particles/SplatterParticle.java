@@ -1,7 +1,7 @@
-package com.beckadam.splatterizer.particles;
+package com.beckadam.ballisticblood.particles;
 
-import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import com.beckadam.splatterizer.helpers.CommonHelper;
+import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
+import com.beckadam.ballisticblood.helpers.CommonHelper;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.entity.Entity;

@@ -15,7 +15,7 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 minecraft {
     mappings channel: mappings_channel, version: mappings_version
 
-    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+//    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
     runs {
         client {
@@ -107,7 +107,7 @@ jar {
         attr['FMLCorePluginContainsFMLMod'] = 'true'
         attr['TweakClass']                  = 'org.spongepowered.asm.launch.MixinTweaker'
         attr['ForceLoadAsMod']              = "true"
-        attr['FMLAT']                       = "accesstransformer.cfg"
+//        attr['FMLAT']                       = "accesstransformer.cfg"
 
         def currentTasks = gradle.startParameter.taskNames
         if (currentTasks[0] == 'build' || currentTasks[0] == 'assemble')

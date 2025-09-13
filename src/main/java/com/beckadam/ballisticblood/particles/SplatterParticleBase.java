@@ -1,7 +1,7 @@
-package com.beckadam.splatterizer.particles;
+package com.beckadam.ballisticblood.particles;
 
-import com.beckadam.splatterizer.helpers.ClientHelper;
-import com.beckadam.splatterizer.helpers.CommonHelper;
+import com.beckadam.ballisticblood.helpers.ClientHelper;
+import com.beckadam.ballisticblood.helpers.CommonHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.client.particle.Particle;
@@ -14,12 +14,11 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;
-import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
+import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.util.ArrayList;
-import java.util.List;
 
 
 @SideOnly(Side.CLIENT)

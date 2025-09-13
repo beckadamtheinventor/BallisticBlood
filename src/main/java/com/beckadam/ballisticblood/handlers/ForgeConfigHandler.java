@@ -1,7 +1,6 @@
-package com.beckadam.splatterizer.handlers;
+package com.beckadam.ballisticblood.handlers;
 
 
-import com.beckadam.splatterizer.particles.ParticleTypeManager;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.minecraft.util.JsonUtils;
@@ -11,13 +10,13 @@ import net.minecraftforge.common.config.ConfigManager;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import com.beckadam.splatterizer.SplatterizerMod;
+import com.beckadam.ballisticblood.BallisticBloodMod;
 import org.apache.logging.log4j.Level;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@Config(modid = SplatterizerMod.MODID)
+@Config(modid = BallisticBloodMod.MODID)
 public class ForgeConfigHandler {
 
 	@Config.Comment("Server-Side Options")
@@ -36,7 +35,7 @@ public class ForgeConfigHandler {
     public static boolean needsTextureLoad = true;
 
     public static class ServerConfig {
-        @Config.Comment("entity=type eg. minecraft:player=ENDER")
+        @Config.Comment("entity=type eg. minecraft:pig=BLOOD")
         @Config.Name("Entity splatter types")
         public String[] entitySplatterTypes = new String[] {
                 "minecraft:skeleton=DUST",
@@ -56,20 +55,20 @@ public class ForgeConfigHandler {
         @Config.Ignore
         public Map<ResourceLocation, Integer> entitySplatterTypeMap = null;
 
-        @Config.Comment("Difficult to edit manually, but this defines all the splatter types and per-type values.\nThere will probably be a web UI for this at some point.")
+        @Config.Comment("Difficult to edit manually. This defines all the splatter types and per-type values.\nThere will probably be a web UI for this at some point.")
         @Config.Name("Splatter Type List")
         public String[] particleConfig = new String[] {
-                "{\"name\":\"BLOOD\",\"texture\":\"splatterizer:textures/particle/blood_particle.png\",\"size\":1," +
+                "{\"name\":\"BLOOD\",\"texture\":\"ballisticblood:textures/particle/blood_particle.png\",\"size\":1," +
                         "\"gravity\":1,\"velocity\":1,\"spray_rate\":4,\"spray_velocity\":0.25,\"blend\":\"NORMAL\"}",
-                "{\"name\":\"DUST\",\"texture\":\"splatterizer:textures/particle/dust_particle.png\",\"size\":1," +
+                "{\"name\":\"DUST\",\"texture\":\"ballisticblood:textures/particle/dust_particle.png\",\"size\":1," +
                         "\"gravity\":0.1,\"velocity\":0.4,\"spray_rate\":0,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
-                "{\"name\":\"ASH\",\"texture\":\"splatterizer:textures/particle/ash_particle.png\",\"size\":1," +
+                "{\"name\":\"ASH\",\"texture\":\"ballisticblood:textures/particle/ash_particle.png\",\"size\":1," +
                         "\"gravity\":0.1,\"velocity\":0.4,\"spray_rate\":0,\"spray_velocity\":0.02,\"blend\":\"NORMAL\"}",
-                "{\"name\":\"SLIME\",\"texture\":\"splatterizer:textures/particle/slime_particle.png\",\"size\":0.8," +
+                "{\"name\":\"SLIME\",\"texture\":\"ballisticblood:textures/particle/slime_particle.png\",\"size\":0.8," +
                         "\"gravity\":2,\"velocity\":1.2,\"spray_rate\":4,\"spray_velocity\":0.3," +
                         "\"blend\":\"ONE ONE_MINUS_SRC_ALPHA\",\"blend_op\":\"MAX\",\"lighting\":false," +
                         "\"color_multiplier\":2.0}",
-                "{\"name\":\"ENDER\",\"texture\":\"splatterizer:textures/particle/ender_particle.png\",\"size\":1," +
+                "{\"name\":\"ENDER\",\"texture\":\"ballisticblood:textures/particle/ender_particle.png\",\"size\":1," +
                         "\"gravity\":1,\"velocity\":1,\"spray_rate\":4,\"spray_velocity\":0.25," +
                         "\"blend\":\"SRC_ALPHA SRC_COLOR\"}",
         };
@@ -178,12 +177,12 @@ public class ForgeConfigHandler {
         public float extraParticlesPerHeartOfDamage = 0.5f;
     }
 
-	@Mod.EventBusSubscriber(modid = SplatterizerMod.MODID)
+	@Mod.EventBusSubscriber(modid = BallisticBloodMod.MODID)
 	private static class EventHandler {
 		@SubscribeEvent
 		public static void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent event) {
-			if(event.getModID().equals(SplatterizerMod.MODID)) {
-				ConfigManager.sync(SplatterizerMod.MODID, Config.Type.INSTANCE);
+			if(event.getModID().equals(BallisticBloodMod.MODID)) {
+				ConfigManager.sync(BallisticBloodMod.MODID, Config.Type.INSTANCE);
                 ParseSplatterizerConfig();
 			}
 		}
@@ -276,7 +275,7 @@ public class ForgeConfigHandler {
             } else {
                 alphaMultiplier = 1.0f;
             }
-            type = SplatterizerMod.particleTypes.add(typeName);
+            type = BallisticBloodMod.particleTypes.add(typeName);
         }
     }
 
@@ -291,14 +290,14 @@ public class ForgeConfigHandler {
         } else {
             particleConfigIntMap.clear();
         }
-        SplatterizerMod.particleTypes.init();
+        BallisticBloodMod.particleTypes.init();
         for (String s : server.particleConfig) {
             try {
                 ParticleConfig conf = new ParticleConfig(s);
                 particleConfigMap.put(conf.typeName, conf);
                 particleConfigIntMap.put(conf.type, conf);
             } catch (Exception err) {
-                SplatterizerMod.LOGGER.log(Level.ERROR, "Failed to parse particle type config: \"" + s + "\"");
+                BallisticBloodMod.LOGGER.log(Level.ERROR, "Failed to parse particle type config: \"" + s + "\"");
                 continue;
             }
 //            SplatterizerMod.LOGGER.log(Level.INFO, s);
@@ -311,11 +310,11 @@ public class ForgeConfigHandler {
         for (String s : server.entitySplatterTypes) {
             String[] a = s.split("=", 2);
             if (a.length == 2) {
-                int num = SplatterizerMod.particleTypes.get(a[1]);
+                int num = BallisticBloodMod.particleTypes.get(a[1]);
                 server.entitySplatterTypeMap.put(new ResourceLocation(a[0]), num);
 //                SplatterizerMod.LOGGER.log(Level.INFO, a[0] + " = " + a[1]);
             } else {
-                SplatterizerMod.LOGGER.log(Level.WARN, "Invalid splatter type mapping: \"" + s + "\"");
+                BallisticBloodMod.LOGGER.log(Level.WARN, "Invalid splatter type mapping: \"" + s + "\"");
             }
         }
         needsTextureLoad = true;

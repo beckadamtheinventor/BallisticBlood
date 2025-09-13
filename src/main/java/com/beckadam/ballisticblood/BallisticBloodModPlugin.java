@@ -1,14 +1,14 @@
-package com.beckadam.splatterizer;
+package com.beckadam.ballisticblood;
 
 
 import java.util.Map;
-import org.spongepowered.asm.launch.MixinBootstrap;
+
 import net.minecraftforge.fml.relauncher.IFMLLoadingPlugin;
 
 @IFMLLoadingPlugin.MCVersion("1.12.2")
-public class SplatterizerModPlugin implements IFMLLoadingPlugin {
+public class BallisticBloodModPlugin implements IFMLLoadingPlugin {
 
-    public SplatterizerModPlugin() {
+    public BallisticBloodModPlugin() {
 //        MixinBootstrap.init();
         //False for Vanilla/Coremod mixins, true for regular mod mixins
         //FermiumRegistryAPI.enqueueMixin(false, "mixins.replacememodid.vanilla.json");

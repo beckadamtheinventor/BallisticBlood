@@ -1,7 +1,7 @@
-package com.beckadam.splatterizer.helpers;
+package com.beckadam.ballisticblood.helpers;
 
-import com.beckadam.splatterizer.SplatterizerMod;
-import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
+import com.beckadam.ballisticblood.BallisticBloodMod;
+import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.util.DamageSource;
@@ -23,7 +23,7 @@ public class CommonHelper {
                 return ForgeConfigHandler.server.entitySplatterTypeMap.get(rl);
             } else {
                 String s = ForgeConfigHandler.server.entitySplatterTypeDefault;
-                return SplatterizerMod.particleTypes.get(s);
+                return BallisticBloodMod.particleTypes.get(s);
             }
         } catch (Exception e) {
             return 0;

@@ -1,4 +1,4 @@
-package com.beckadam.splatterizer.particles;
+package com.beckadam.ballisticblood.particles;
 
 public enum ParticleSubType {
     BASE,

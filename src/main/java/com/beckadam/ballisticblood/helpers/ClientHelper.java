@@ -1,8 +1,8 @@
-package com.beckadam.splatterizer.helpers;
+package com.beckadam.ballisticblood.helpers;
 
-import com.beckadam.splatterizer.SplatterizerMod;
-import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import com.beckadam.splatterizer.particles.*;
+import com.beckadam.ballisticblood.BallisticBloodMod;
+import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
+import com.beckadam.ballisticblood.particles.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.util.math.Vec3d;
@@ -23,7 +23,7 @@ public class ClientHelper {
         if (ForgeConfigHandler.particleConfigIntMap.containsKey(type)) {
             splatter(ForgeConfigHandler.particleConfigIntMap.get(type), position, direction, damage);
         } else {
-            SplatterizerMod.LOGGER.log(Level.WARN, "Ignoring unknown splatter particle type " + type);
+            BallisticBloodMod.LOGGER.log(Level.WARN, "Ignoring unknown splatter particle type " + type);
         }
     }
 

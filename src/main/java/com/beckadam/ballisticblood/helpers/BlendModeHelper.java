@@ -1,6 +1,6 @@
-package com.beckadam.splatterizer.helpers;
+package com.beckadam.ballisticblood.helpers;
 
-import com.beckadam.splatterizer.SplatterizerMod;
+import com.beckadam.ballisticblood.BallisticBloodMod;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -20,7 +20,7 @@ public class BlendModeHelper {
             try {
                 return GlStateManager.SourceFactor.valueOf(mode);
             } catch (Exception e) {
-                SplatterizerMod.LOGGER.log(Level.WARN,
+                BallisticBloodMod.LOGGER.log(Level.WARN,
                         "Unknown/Invalid blend source factor: \"" + mode+ "\"");
                 return null;
             }
@@ -38,7 +38,7 @@ public class BlendModeHelper {
             try {
                 return GlStateManager.DestFactor.valueOf(mode);
             } catch (Exception e) {
-                SplatterizerMod.LOGGER.log(Level.WARN,
+                BallisticBloodMod.LOGGER.log(Level.WARN,
                         "Unknown/Invalid blend dest factor: \"" +mode + "\"");
                 return null;
             }
@@ -61,7 +61,7 @@ public class BlendModeHelper {
             return GL14.GL_MAX;
         } else {
             if (!mode.isEmpty()) {
-                SplatterizerMod.LOGGER.log(Level.WARN, "Unknown/Invalid blend operation \"" + mode + "\"");
+                BallisticBloodMod.LOGGER.log(Level.WARN, "Unknown/Invalid blend operation \"" + mode + "\"");
             }
             return GL14.GL_FUNC_ADD;
         }

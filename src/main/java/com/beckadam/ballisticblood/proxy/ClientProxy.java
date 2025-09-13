@@ -1,8 +1,8 @@
-package com.beckadam.splatterizer.proxy;
+package com.beckadam.ballisticblood.proxy;
 
-import com.beckadam.splatterizer.handlers.ForgeConfigHandler;
-import com.beckadam.splatterizer.helpers.CommonHelper;
-import com.beckadam.splatterizer.helpers.ClientHelper;
+import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
+import com.beckadam.ballisticblood.helpers.CommonHelper;
+import com.beckadam.ballisticblood.helpers.ClientHelper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.SimpleTexture;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -24,6 +24,7 @@ public class ClientProxy extends CommonProxy {
                 tm.loadTexture(cfg.texture, new SimpleTexture(cfg.texture));
             }
         }
+        ForgeConfigHandler.needsTextureLoad = false;
     }
     @Override
     public void AttackEntityFromHandler(Entity entity, DamageSource source, float amount) {

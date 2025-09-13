@@ -1,4 +1,4 @@
-package com.beckadam.splatterizer.renderer;
+package com.beckadam.ballisticblood.renderer;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
