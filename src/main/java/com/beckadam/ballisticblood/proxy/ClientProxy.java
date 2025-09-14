@@ -31,18 +31,12 @@ public class ClientProxy extends CommonProxy {
 //        SplatterizerMod.LOGGER.log(Level.INFO, "ClientProxy.AttackEntityFromHandler");
         int particleType = CommonHelper.GetParticleTypeForEntity(entity);
         // Spawn particles of particleType using position, velocity (scaled by damage amount)
-        Entity sourceEntity = source.getImmediateSource();
-        if (sourceEntity == null) {
-            sourceEntity = source.getTrueSource();
-        }
-        if (sourceEntity != null) {
-            ClientHelper.splatter(
-                    particleType,
-                    CommonHelper.GetParticlePosition(entity, source),
-                    CommonHelper.GetParticleVelocity(entity.getPositionVector(), source),
-                    amount
-            );
-        }
+        ClientHelper.splatter(
+                particleType,
+                CommonHelper.GetParticlePosition(entity, source),
+                CommonHelper.GetParticleVelocity(entity.getPositionVector(), source),
+                amount
+        );
     }
 
     @Override

@@ -5,6 +5,7 @@ import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
 import com.beckadam.ballisticblood.helpers.CommonHelper;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.*;
@@ -33,12 +34,23 @@ public class SplatterParticle extends SplatterParticleBase {
     }
 
     @Override
-    public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
-        float alpha = 1.0f;
-        if (this.particleAge >= this.fadeStart) {
-            alpha -= ((float)(this.particleAge - this.fadeStart) / (float)(this.particleMaxAge - this.fadeStart));
+    public void renderParticle(BufferBuilder buffer, Entity playerEntity, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
+        // don't render particle if it's out of render distance
+        if (playerEntity.getDistanceSq(this.posX, this.posY, this.posZ) >= ForgeConfigHandler.client.particleRenderDistanceCubed) {
+            return;
         }
-        alpha *= this.particleAlpha;
+//        // TODO: don't render particle if it's behind the player
+//        double ang = Math.atan2(playerEntity.posX - this.posX, playerEntity.posZ - this.posZ);
+//        if (ang >= Math.PI*0.5 && ang < Math.PI*1.5) {
+//            return;
+//        }
+        float alpha;
+        if (this.particleAge >= this.fadeStart) {
+            alpha = (1.0f - ((float)(this.particleAge - this.fadeStart) / (float)(this.particleMaxAge - this.fadeStart)))
+                    * this.particleAlpha * alphaMultiplier;;
+        } else {
+            alpha = this.particleAlpha * alphaMultiplier;
+        }
 
         int i = this.getBrightnessForRender(partialTicks);
         int lx = (i >> 16) & 65535;
@@ -90,20 +102,24 @@ public class SplatterParticle extends SplatterParticleBase {
 //        GL11.glPushMatrix();
         buffer.pos(px + quad[0].x, py + quad[0].y, pz + quad[0].z)
                 .tex(finalUVOffsets[0].x+u1, finalUVOffsets[0].y+v1)
-                .color(colorMultiplier, colorMultiplier, colorMultiplier, alphaMultiplier*alpha)
-                .lightmap(lx, ly).endVertex();
+                .color(colorMultiplier, colorMultiplier, colorMultiplier, alpha)
+                .lightmap(lx, ly)
+                .endVertex();
         buffer.pos(px + quad[1].x, py + quad[1].y, pz + quad[1].z)
                 .tex(finalUVOffsets[1].x+u1, finalUVOffsets[1].y+v0)
-                .color(colorMultiplier, colorMultiplier, colorMultiplier, alphaMultiplier*alpha)
-                .lightmap(lx, ly).endVertex();
+                .color(colorMultiplier, colorMultiplier, colorMultiplier, alpha)
+                .lightmap(lx, ly)
+                .endVertex();
         buffer.pos(px + quad[2].x, py + quad[2].y, pz + quad[2].z)
                 .tex(finalUVOffsets[2].x+u0, finalUVOffsets[2].y+v0)
-                .color(colorMultiplier, colorMultiplier, colorMultiplier, alphaMultiplier*alpha)
-                .lightmap(lx, ly).endVertex();
+                .color(colorMultiplier, colorMultiplier, colorMultiplier, alpha)
+                .lightmap(lx, ly)
+                .endVertex();
         buffer.pos(px + quad[3].x, py + quad[3].y, pz + quad[3].z)
                 .tex(finalUVOffsets[3].x+u0, finalUVOffsets[3].y+v1)
-                .color(colorMultiplier, colorMultiplier, colorMultiplier, alphaMultiplier*alpha)
-                .lightmap(lx, ly).endVertex();
+                .color(colorMultiplier, colorMultiplier, colorMultiplier, alpha)
+                .lightmap(lx, ly)
+                .endVertex();
 //        GL11.glPopMatrix();
     }
 

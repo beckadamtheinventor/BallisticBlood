@@ -10,6 +10,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
+import org.apache.logging.log4j.Level;
 
 import java.util.Random;
 
@@ -144,11 +145,11 @@ public class CommonHelper {
             double r = 0.1 * (random.nextFloat() - 0.5) * variance;
             double r2 = random.nextFloat() * variance;
             double dx = r + spread * 4.0 * ((double)index / (double)total - 0.5);
-            double dy = 0.25 * random.nextFloat() - 0.125;
+            double dy = 0.25 * random.nextFloat();
             double a0 = Math.atan2(dir.z, dir.x);
             double ang = a0 + dx * 0.5 * Math.PI;
             Vec3d offset = new Vec3d(Math.cos(ang), dy, Math.sin(ang));
-//            SplatterizerMod.LOGGER.log(Level.INFO, "Direction angle: " + ang + " offset vector: " + offset);
+//            BallisticBloodMod.LOGGER.log(Level.INFO, "Direction angle: " + ang + " offset vector: " + offset);
             return dir.add(offset.scale(r2));
         }
         return dir;

@@ -17,6 +17,7 @@ import net.minecraft.world.World;
 import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
+import org.lwjgl.opengl.GL14;
 
 import java.util.ArrayList;
 
@@ -65,7 +66,7 @@ public class SplatterParticleBase extends Particle {
         this.motionZ = vz;
         this.decalScale = ForgeConfigHandler.client.decalScale;
         this.particleMaxAge = ForgeConfigHandler.client.particleLifetime;
-        this.fadeStart = Math.min(ForgeConfigHandler.client.particleFadeStart, this.particleMaxAge + 1);
+        this.fadeStart = this.particleMaxAge;
         finalUVOffsets = new Vec2f[] { Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO };
         subParticles = new ArrayList<>();
         subType = ParticleSubType.BASE;
@@ -76,7 +77,7 @@ public class SplatterParticleBase extends Particle {
 
     public void setLifetime(int lifetime, int fadeStart) {
         this.particleMaxAge = lifetime;
-        this.fadeStart = Math.min(fadeStart, this.particleMaxAge + 1);
+        this.fadeStart = Math.min(fadeStart, lifetime);
     }
 
     public void addSubparticle(SplatterParticle particle) {
@@ -151,19 +152,19 @@ public class SplatterParticleBase extends Particle {
     // The Base splatter particle renders all the particles for each splatter
     @Override
     public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
+        // check whether particles are disabled; destroy if so
+        if (!ForgeConfigHandler.client.enableSplatterParticles) {
+            this.setExpired();
+        }
         if (!this.subParticles.isEmpty()) {
-            float alpha = 1.0f;
-            if (this.particleAge >= this.fadeStart) {
-                alpha -= ((float)(this.particleAge - this.fadeStart) / (float)(this.particleMaxAge - this.fadeStart));
-            }
             ipx = (float)(player.prevPosX + (player.posX - player.prevPosX) * partialTicks);
             ipy = (float)(player.prevPosY + (player.posY - player.prevPosY) * partialTicks);
             ipz = (float)(player.prevPosZ + (player.posZ - player.prevPosZ) * partialTicks);
 
-            GlStateManager.glBlendEquation(blendOp);
             GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
-            GlStateManager.enableBlend();
-            GlStateManager.disableNormalize();
+            GlStateManager.glBlendEquation(blendOp);
+//            GlStateManager.enableAlpha();
+//            GlStateManager.color(1, 1, 1, 1);
             if (lightingEnabled) {
                 GlStateManager.enableLighting();
             } else {
@@ -172,14 +173,10 @@ public class SplatterParticleBase extends Particle {
             Minecraft.getMinecraft().getTextureManager().bindTexture(splatterParticleTexture);
             buffer.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
             for (SplatterParticle sub : this.subParticles) {
-                // set the alpha for the sub-particle
-                sub.setAlphaF(alpha);
                 // render sub-particle and its sub-particles
                 sub.renderParticle(buffer, entityIn, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
             }
             Tessellator.getInstance().draw();
-            GlStateManager.glBlendEquation(32774); // "add" blend function
-            GlStateManager.enableNormalize();
         }
 
     }
@@ -190,12 +187,22 @@ public class SplatterParticleBase extends Particle {
     }
 
     @Override
+    public void setExpired() {
+        super.setExpired();
+        this.subParticles.clear();
+    }
+
+    @Override
     public void onUpdate() {
-        for (SplatterParticle sub : this.subParticles) {
-            sub.onUpdate();
+        if (this.particleAge++ >= this.particleMaxAge) {
+            this.setExpired();
+        } else {
+            for (SplatterParticle sub : this.subParticles) {
+                sub.onUpdate();
+            }
+            this.subParticles.removeIf(p -> !p.isAlive());
+            spawnSubParticles();
         }
-        this.subParticles.removeIf(p -> !p.isAlive());
-        spawnSubParticles();
     }
 
     protected void spawnSubParticles() {

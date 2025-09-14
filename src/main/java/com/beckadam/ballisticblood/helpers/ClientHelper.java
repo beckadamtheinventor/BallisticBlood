@@ -30,6 +30,10 @@ public class ClientHelper {
     ///  Spawn splatter particles for a given splatter config at position facing direction (also used for velocity) scaling by damage
     ///  Uses values from client config
     public static void splatter(ForgeConfigHandler.ParticleConfig cfg, Vec3d position, Vec3d direction, float damage) {
+        // if we have splatter particles disabled, return before doing anything
+        if (!ForgeConfigHandler.client.enableSplatterParticles) {
+            return;
+        }
         World world = Minecraft.getMinecraft().world;
         if (world == null) {
             return;
@@ -58,8 +62,8 @@ public class ClientHelper {
             // set the particle subtype so the main impact particle doesn't get rendered
             mainParticle.setParticleSubType(ParticleSubType.IMPACT);
 
-            // randomize the particle texture
-            mainParticle.randomizeParticleTexture();
+            // set the lifetime and fade start time
+            mainParticle.setLifetime(ForgeConfigHandler.client.particleLifetime, ForgeConfigHandler.client.particleLifetime);
 
             // set no gravity so it stays in the same position
             mainParticle.setGravity(0.0f);
@@ -69,9 +73,6 @@ public class ClientHelper {
 
             // set the velocity for emitted spray particles
             mainParticle.setEmissionVelocity(cfg.emissionVelocity);
-
-            // set the values to multiply texture color/alpha with when drawing
-            mainParticle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);
 
             // set color/alpha blending factors
             mainParticle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
@@ -94,6 +95,9 @@ public class ClientHelper {
                     // (texture selected from rows 0, 1, 2, 3, and 4)
                     particle.setParticleSubType(ParticleSubType.PROJECTILE);
 
+                    // randomize the particle texture
+                    particle.randomizeParticleTexture();
+
                     // set gravity from config
                     particle.setGravity(ForgeConfigHandler.client.projectileParticleGravity);
 
@@ -107,12 +111,15 @@ public class ClientHelper {
                     mainParticle.addSubparticle(particle);
                 }
             }
-            // finally, add the impact particle to Minecraft's particle effect list
-            // SplatterParticleBase.renderParticle is called by the game to draw the particle
+            // finally, add the impact particle to the particle manager
+            // ParticleManager.renderParticle is called by the game to draw all of our particle
             //   the function draws the projectile and spray particles
-            // SplatterParticleBase.onUpdate is called by the game to update the particle's position and lifetime
+            // ParticleManager.onUpdate is called by the game to update all of our particles
             //   the function updates the initial particle's lifetime and updates the projectile and spray particles
-            Minecraft.getMinecraft().effectRenderer.addEffect(mainParticle);
+            if (ParticleManager.instance == null) {
+                ParticleManager.MakeParticleManager(world);
+            }
+            ParticleManager.instance.add(mainParticle);
         }
     }
 

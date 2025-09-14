@@ -28,19 +28,13 @@ public class CommonProxy {
     public void AttackEntityFromHandler(Entity entity, DamageSource source, float amount) {
 //        SplatterizerMod.LOGGER.log(Level.INFO, "CommonProxy.AttackEntityFromHandler");
         int particleType = CommonHelper.GetParticleTypeForEntity(entity);
-        Entity sourceEntity = source.getImmediateSource();
-        if (sourceEntity == null) {
-            sourceEntity = source.getTrueSource();
-        }
-        if (sourceEntity != null) {
-            // Spawn particles of particleType using position, velocity (scaled by damage amount)
-            BallisticBloodMod.PROXY.sendMessageParticle(
-                    entity.dimension, particleType,
-                    CommonHelper.GetParticlePosition(entity, source),
-                    CommonHelper.GetParticleVelocity(entity.getPositionVector(), source),
-                    amount
-            );
-        }
+        // Spawn particles of particleType using position, velocity (scaled by damage amount)
+        BallisticBloodMod.PROXY.sendMessageParticle(
+                entity.dimension, particleType,
+                CommonHelper.GetParticlePosition(entity, source),
+                CommonHelper.GetParticleVelocity(entity.getPositionVector(), source),
+                amount
+        );
     }
 
     public void sendMessageParticle(int dimension, int type, Vec3d position, Vec3d direction, float damage) {

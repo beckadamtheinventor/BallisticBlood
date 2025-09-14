@@ -52,6 +52,7 @@ public class MessageParticleHandler {
         public static class Handler implements IMessageHandler<MessageParticle, IMessage> {
             @Override
             public IMessage onMessage(MessageParticle message, MessageContext ctx) {
+                // if received on the client and we have splatter particles enabled
                 if(ctx.side == Side.CLIENT && ForgeConfigHandler.client.enableSplatterParticles) {
                     ClientHelper.splatter(
                             message.splatterType,

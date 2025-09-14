@@ -59,11 +59,11 @@ public class ForgeConfigHandler {
         @Config.Name("Splatter Type List")
         public String[] particleConfig = new String[] {
                 "{\"name\":\"BLOOD\",\"texture\":\"ballisticblood:textures/particle/blood_particle.png\",\"size\":1," +
-                        "\"gravity\":1,\"velocity\":1,\"spray_rate\":4,\"spray_velocity\":0.25,\"blend\":\"NORMAL\"}",
+                        "\"gravity\":1,\"velocity\":1,\"spray_rate\":4,\"spray_velocity\":0.25,\"blend\":\"SRC_ALPHA SRC_COLOR\"}",
                 "{\"name\":\"DUST\",\"texture\":\"ballisticblood:textures/particle/dust_particle.png\",\"size\":1," +
                         "\"gravity\":0.1,\"velocity\":0.4,\"spray_rate\":0,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
                 "{\"name\":\"ASH\",\"texture\":\"ballisticblood:textures/particle/ash_particle.png\",\"size\":1," +
-                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_rate\":0,\"spray_velocity\":0.02,\"blend\":\"NORMAL\"}",
+                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_rate\":0,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
                 "{\"name\":\"SLIME\",\"texture\":\"ballisticblood:textures/particle/slime_particle.png\",\"size\":0.8," +
                         "\"gravity\":2,\"velocity\":1.2,\"spray_rate\":4,\"spray_velocity\":0.3," +
                         "\"blend\":\"ONE ONE_MINUS_SRC_ALPHA\",\"blend_op\":\"MAX\",\"lighting\":false," +
@@ -78,12 +78,12 @@ public class ForgeConfigHandler {
 	public static class ClientConfig {
         @Config.Comment("Experimental method to reduce the likelihood of decal particles being partially midair")
         @Config.Name("Enable experimental overhang clipping method")
-        public boolean enableExperimentalOverhangClipping = true;
+        public boolean enableExperimentalOverhangClipping = false;
 
         @Config.Comment("The number of vertices of a decal quad to allow midair before making the particle fall")
         @Config.Name("Floating vertex fall threshold")
         @Config.RangeInt(min=0, max=4)
-        public int floatingVertexFallThreshold = 2;
+        public int floatingVertexFallThreshold = 1;
 
         @Config.Comment("(advanced) set the surface offset multiplier for decal particles landed on surfaces")
         @Config.Name("Decal surface offset mutliplier")
@@ -97,9 +97,12 @@ public class ForgeConfigHandler {
         @Config.Name("Lifetime of splatter particles in ticks")
         public int particleLifetime = 120*20;
 
-        @Config.Comment("This doesn't work for all blend modes!")
-        @Config.Name("Splatter particle fade start time in ticks")
-        public int particleFadeStart = 100*20;
+        @Config.Comment("Measured in blocks.")
+        @Config.Name("Maximum distance to render splatter particles at")
+        public double particleRenderDistance = 20.0;
+
+        @Config.Ignore
+        public double particleRenderDistanceCubed = 1.0;
 
         @Config.Name("Radius of splatter spread in quarter-circles")
         public float particleSpreadSize = 1.0f;
@@ -122,7 +125,7 @@ public class ForgeConfigHandler {
 
         @Config.Comment("Multiplied by other values to get final value.")
         @Config.Name("Projectile particle velocity")
-        public float projectileParticleVelocity = 0.25f;
+        public float projectileParticleVelocity = 0.75f;
 
         @Config.Comment("Multiplied by other values to get final value.")
         @Config.Name("Projectile particle gravity")
@@ -164,9 +167,9 @@ public class ForgeConfigHandler {
         @Config.Name("Enable splatter particles")
         public boolean enableSplatterParticles = true;
 
-        @Config.Comment("Projectile particles emitted is this number plus the damage times the particles per heart")
+        @Config.Comment("Projectile particles emitted is this number plus the damage times the particles per heart.\nNote that this value can be negative to increase the minimum damage required to cause splatter particles.")
         @Config.Name("Number of projectile particles to emit for each hit")
-        public int particleSpreadCount = 1;
+        public int particleSpreadCount = -1;
 
         @Config.Comment("Absolute maximum number of projectile particles to spawn per hit")
         @Config.Name("Maximum projectile particles per splatter")
@@ -178,7 +181,7 @@ public class ForgeConfigHandler {
 
         @Config.Comment("Projectile particles emitted is the spread count plus the damage times this value")
         @Config.Name("Extra projectile particles per heart of damage")
-        public float extraParticlesPerHeartOfDamage = 0.5f;
+        public float extraParticlesPerHeartOfDamage = 1.0f;
     }
 
 	@Mod.EventBusSubscriber(modid = BallisticBloodMod.MODID)
@@ -294,17 +297,17 @@ public class ForgeConfigHandler {
         } else {
             particleConfigIntMap.clear();
         }
+        client.particleRenderDistanceCubed = client.particleRenderDistance*client.particleRenderDistance*client.particleRenderDistance;
         BallisticBloodMod.particleTypes.init();
         for (String s : server.particleConfig) {
             try {
                 ParticleConfig conf = new ParticleConfig(s);
                 particleConfigMap.put(conf.typeName, conf);
                 particleConfigIntMap.put(conf.type, conf);
+                BallisticBloodMod.LOGGER.log(Level.INFO, s);
             } catch (Exception err) {
                 BallisticBloodMod.LOGGER.log(Level.ERROR, "Failed to parse particle type config: \"" + s + "\"");
-                continue;
             }
-//            SplatterizerMod.LOGGER.log(Level.INFO, s);
         }
         if (server.entitySplatterTypeMap == null) {
             server.entitySplatterTypeMap = new HashMap<>();
@@ -316,7 +319,7 @@ public class ForgeConfigHandler {
             if (a.length == 2) {
                 int num = BallisticBloodMod.particleTypes.get(a[1]);
                 server.entitySplatterTypeMap.put(new ResourceLocation(a[0]), num);
-//                SplatterizerMod.LOGGER.log(Level.INFO, a[0] + " = " + a[1]);
+                BallisticBloodMod.LOGGER.log(Level.INFO, a[0] + " = " + a[1]);
             } else {
                 BallisticBloodMod.LOGGER.log(Level.WARN, "Invalid splatter type mapping: \"" + s + "\"");
             }
