@@ -17,9 +17,10 @@ import net.minecraft.world.World;
 import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.lwjgl.opengl.GL14;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 
 @SideOnly(Side.CLIENT)
@@ -41,7 +42,7 @@ public class SplatterParticleBase extends Particle {
     protected Vec3d[] finalQuad;
     protected Vec2f[] finalUVOffsets;
     protected EnumFacing facing;
-    protected ArrayList<SplatterParticle> subParticles;
+    protected List<SplatterParticle> subParticles;
     protected int subParticleCount = 0;
     protected ParticleSubType subType, oldSubType;
     protected int ticksSinceLastEmission = 0;
@@ -68,7 +69,7 @@ public class SplatterParticleBase extends Particle {
         this.particleMaxAge = ForgeConfigHandler.client.particleLifetime;
         this.fadeStart = this.particleMaxAge;
         finalUVOffsets = new Vec2f[] { Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO };
-        subParticles = new ArrayList<>();
+        subParticles = Collections.synchronizedList(new ArrayList<>());
         subType = ParticleSubType.BASE;
         splatterParticleTexture = null;
         player = Minecraft.getMinecraft().player;
@@ -151,7 +152,7 @@ public class SplatterParticleBase extends Particle {
 
     // The Base splatter particle renders all the particles for each splatter
     @Override
-    public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
+    public synchronized void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
         // check whether particles are disabled; destroy if so
         if (!ForgeConfigHandler.client.enableSplatterParticles) {
             this.setExpired();
@@ -193,7 +194,7 @@ public class SplatterParticleBase extends Particle {
     }
 
     @Override
-    public void onUpdate() {
+    public synchronized void onUpdate() {
         if (this.particleAge++ >= this.particleMaxAge) {
             this.setExpired();
         } else {

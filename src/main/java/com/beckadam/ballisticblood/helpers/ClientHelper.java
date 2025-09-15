@@ -119,6 +119,7 @@ public class ClientHelper {
             if (ParticleManager.instance == null) {
                 ParticleManager.MakeParticleManager(world);
             }
+//            BallisticBloodMod.LOGGER.log(Level.INFO, "splatter");
             ParticleManager.instance.add(mainParticle);
         }
     }

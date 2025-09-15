@@ -43,7 +43,7 @@ public class BallisticBloodMod {
 //        }
         PROXY.init();
         if (event.getSide() == Side.CLIENT) {
-            BallisticBloodCommandHandler.register(MinecraftForge.EVENT_BUS);
+            BallisticBloodCommandHandler.register();
             ParticleManager.register(MinecraftForge.EVENT_BUS);
         }
     }

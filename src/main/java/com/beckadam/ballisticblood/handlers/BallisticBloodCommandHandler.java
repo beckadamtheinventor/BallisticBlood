@@ -28,37 +28,11 @@ import java.util.List;
 @SideOnly(Side.CLIENT)
 public class BallisticBloodCommandHandler implements ICommand {
 
-    public static void register(EventBus bus) {
+    public static void register() {
         ClientCommandHandler.instance.registerCommand(new BallisticBloodCommandHandler());
     }
 
     protected BallisticBloodCommandHandler() {}
-
-    @SubscribeEvent
-    public static void onClientMessage(ClientChatEvent event) {
-        executeCommand(Minecraft.getMinecraft().player, event.getMessage());
-    }
-
-    public static void executeCommand(ICommandSender sender, String message) {
-        message = message.trim();
-        boolean usedSlash = message.startsWith("/");
-        if (usedSlash) {
-            message = message.substring(1);
-        }
-
-        String[] temp = message.split(" ");
-        String commandName = temp[0];
-        if (!(usedSlash && commandName.equals("ballisticblood"))) {
-            return;
-        }
-        if (temp.length > 1) {
-            String[] args = new String[temp.length - 1];
-            System.arraycopy(temp, 1, args, 0, args.length);
-
-
-        }
-        sender.sendMessage(new TextComponentString("/ballisticblood reload|disable|enable|toggle|clear"));
-    }
 
     @Override
     public String getName() {
@@ -101,6 +75,7 @@ public class BallisticBloodCommandHandler implements ICommand {
             ));
         } else if (action.equals("clear")) {
             ParticleManager.instance.clear();
+            ParticleManager.MakeParticleManager(sender.getEntityWorld());
             sender.sendMessage(new TextComponentTranslation("command.ballisticblood.cleared"));
         }
     }
@@ -112,12 +87,10 @@ public class BallisticBloodCommandHandler implements ICommand {
 
     @Override
     public List<String> getTabCompletions(MinecraftServer minecraftServer, ICommandSender iCommandSender, String[] strings, @Nullable BlockPos blockPos) {
-        if (strings.length == 0) {
-            return Arrays.asList(new String[]{
-                    "reload", "disable", "enable", "toggle", "clear",
-            });
-        }
-        return Collections.emptyList();
+        return Arrays.asList(new String[]{
+                "reload", "disable", "enable", "toggle", "clear",
+        });
+//        return Collections.emptyList();
     }
 
     @Override

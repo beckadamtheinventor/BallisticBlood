@@ -1,12 +1,11 @@
 package com.beckadam.ballisticblood.particles;
 
 import com.beckadam.ballisticblood.BallisticBloodMod;
+import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.eventhandler.EventBus;
@@ -18,20 +17,18 @@ import org.apache.logging.log4j.Level;
 import org.lwjgl.opengl.GL11;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 @SideOnly(Side.CLIENT)
 public class ParticleManager extends Particle {
+    // note: the synchronized keyword seems to be necessary despite Collections.synchronizedList being threadsafe...
+    // (ConcurrentModification errors result otherwise)
     public static ParticleManager instance = null;
 
-    protected static List<SplatterParticleBase> particles = Collections.synchronizedList(new ArrayList<>());
-    protected static Lock lock = new ReentrantLock();
-    protected static boolean addedToFX = false;
-    protected int dimensionId = 0;
+    protected final List<SplatterParticleBase> particles = Collections.synchronizedList(new ArrayList<>());
+    protected int dimensionId;
 
     public static void register(EventBus bus) {
         bus.register(ParticleManager.class);
@@ -43,16 +40,11 @@ public class ParticleManager extends Particle {
     }
 
     public static void MakeParticleManager(World world) {
-        try {
-            if (lock.tryLock(10, TimeUnit.MICROSECONDS)) {
-                if (instance != null) {
-                    instance.clear();
-                }
-                instance = new ParticleManager(world, 0.0, 0.0, 0.0);
-                Minecraft.getMinecraft().effectRenderer.addEffect(instance);
-                lock.unlock();
-            }
-        } catch (InterruptedException ignored) {}
+        if (instance != null) {
+            instance.clear();
+        }
+        instance = new ParticleManager(world, 0.0, 0.0, 0.0);
+        Minecraft.getMinecraft().effectRenderer.addEffect(instance);
     }
 
     protected ParticleManager(World world, double x, double y, double z) {
@@ -60,25 +52,22 @@ public class ParticleManager extends Particle {
         dimensionId = world.provider.getDimension();
     }
 
-    public void add(SplatterParticleBase particle) {
-        try {
-            if (lock.tryLock(10, TimeUnit.MICROSECONDS)) {
-                particles.add(particle);
-                lock.unlock();
+    public synchronized void add(SplatterParticleBase particle) {
+//        BallisticBloodMod.LOGGER.log(Level.INFO, "add");
+        if (particles.size() >= ForgeConfigHandler.client.maximumProjectileParticles) {
+//            BallisticBloodMod.LOGGER.log(Level.INFO, "expiring 25 projectiles");
+            for (int i=0; i<25; i++) {
+                particles.get(i).setExpired();
             }
-        } catch (InterruptedException ignored) {}
+        }
+        particles.add(particle);
     }
 
-    public void clear() {
-        try {
-            if (lock.tryLock(10, TimeUnit.MICROSECONDS)) {
-                for (SplatterParticleBase particle : particles) {
-                    particle.setExpired();
-                }
-                particles.clear();
-                lock.unlock();
-            }
-        } catch (InterruptedException ignored) {}
+    public synchronized void clear() {
+        for (SplatterParticleBase particle : particles) {
+            particle.setExpired();
+        }
+        particles.clear();
     }
 
     @Override
@@ -87,25 +76,18 @@ public class ParticleManager extends Particle {
         if (Minecraft.getMinecraft().world.provider.getDimension() != dimensionId) {
             return;
         }
-        try {
-            if (lock.tryLock(2, TimeUnit.MICROSECONDS)) {
-                GlStateManager.pushAttrib();
-//                GlStateManager.enableFog();
-                GlStateManager.colorMaterial(GL11.GL_FRONT_AND_BACK, GL11.GL_DIFFUSE);
-                GlStateManager.color(1.0f, 1.0f, 1.0f, 1.0f);
-                GlStateManager.enableColorMaterial();
-                GlStateManager.disableNormalize();
-                GlStateManager.enableBlend();
-                for (SplatterParticleBase particle : particles) {
-                    particle.renderParticle(buffer, playerEntity, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
-                }
-                GlStateManager.popAttrib();
-                GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA,GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-                GlStateManager.glBlendEquation(32774); // "add" blend function
-                GlStateManager.enableNormalize();
-                lock.unlock();
+        synchronized (particles) {
+            GlStateManager.colorMaterial(GL11.GL_FRONT_AND_BACK, GL11.GL_DIFFUSE);
+            GlStateManager.enableColorMaterial();
+            GlStateManager.disableNormalize();
+            GlStateManager.enableBlend();
+            for (SplatterParticleBase particle : particles) {
+                particle.renderParticle(buffer, playerEntity, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
             }
-        } catch (InterruptedException ignored) {}
+            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+            GlStateManager.glBlendEquation(32774); // "add" blend function
+            GlStateManager.enableNormalize();
+        }
     }
 
     @Override
@@ -114,18 +96,22 @@ public class ParticleManager extends Particle {
     }
 
     @Override
+    public boolean isAlive() {
+        return true;
+    }
+
+    @Override
     public void onUpdate() {
         // don't update particles for this particle manager if it's not in the same dimension
         if (Minecraft.getMinecraft().world.provider.getDimension() != dimensionId) {
             return;
         }
-        try {
-            if (lock.tryLock(10, TimeUnit.MICROSECONDS)) {
-                for (SplatterParticleBase particle : particles) {
-                    particle.onUpdate();
-                }
-                lock.unlock();
+//        BallisticBloodMod.LOGGER.log(Level.INFO, "onUpdate");
+        synchronized (particles) {
+            for (SplatterParticleBase particle : particles) {
+                particle.onUpdate();
             }
-        } catch (InterruptedException ignored) {}
+            particles.removeIf(particle -> !particle.isAlive());
+        }
     }
 }
