@@ -39,7 +39,7 @@ public class ParticleManager extends Particle {
         MakeParticleManager(event.player.world);
     }
 
-    public static void MakeParticleManager(World world) {
+    public static synchronized void MakeParticleManager(World world) {
         if (instance != null) {
             instance.clear();
         }

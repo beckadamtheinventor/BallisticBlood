@@ -116,9 +116,6 @@ public class ClientHelper {
             //   the function draws the projectile and spray particles
             // ParticleManager.onUpdate is called by the game to update all of our particles
             //   the function updates the initial particle's lifetime and updates the projectile and spray particles
-            if (ParticleManager.instance == null) {
-                ParticleManager.MakeParticleManager(world);
-            }
 //            BallisticBloodMod.LOGGER.log(Level.INFO, "splatter");
             ParticleManager.instance.add(mainParticle);
         }

@@ -57,6 +57,7 @@ public class BallisticBloodCommandHandler implements ICommand {
         }
         String action = strings[0];
         if (action.equals("reload")) {
+            ParticleManager.MakeParticleManager(sender.getEntityWorld());
             ConfigManager.load(BallisticBloodMod.MODID, Config.Type.INSTANCE);
             ForgeConfigHandler.ParseSplatterizerConfig();
             sender.sendMessage(new TextComponentTranslation("command.ballisticblood.reloaded"));
@@ -74,7 +75,6 @@ public class BallisticBloodCommandHandler implements ICommand {
                             "command.ballisticblood.disabled"
             ));
         } else if (action.equals("clear")) {
-            ParticleManager.instance.clear();
             ParticleManager.MakeParticleManager(sender.getEntityWorld());
             sender.sendMessage(new TextComponentTranslation("command.ballisticblood.cleared"));
         }
