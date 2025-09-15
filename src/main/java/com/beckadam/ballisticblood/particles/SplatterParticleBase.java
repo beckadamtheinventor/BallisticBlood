@@ -152,7 +152,7 @@ public class SplatterParticleBase extends Particle {
 
     // The Base splatter particle renders all the particles for each splatter
     @Override
-    public synchronized void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
+    public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
         // check whether particles are disabled; destroy if so
         if (!ForgeConfigHandler.client.enableSplatterParticles) {
             this.setExpired();
@@ -194,7 +194,7 @@ public class SplatterParticleBase extends Particle {
     }
 
     @Override
-    public synchronized void onUpdate() {
+    public void onUpdate() {
         if (this.particleAge++ >= this.particleMaxAge) {
             this.setExpired();
         } else {

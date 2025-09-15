@@ -23,7 +23,7 @@ import java.util.List;
 
 @SideOnly(Side.CLIENT)
 public class ParticleManager extends Particle {
-    // note: the synchronized keyword seems to be necessary despite Collections.synchronizedList being threadsafe...
+    // note: the keyword seems to be necessary despite Collections.synchronizedList being threadsafe...
     // (ConcurrentModification errors result otherwise)
     public static ParticleManager instance = null;
 
@@ -39,7 +39,7 @@ public class ParticleManager extends Particle {
         MakeParticleManager(event.player.world);
     }
 
-    public static synchronized void MakeParticleManager(World world) {
+    public static void MakeParticleManager(World world) {
         if (instance != null) {
             instance.clear();
         }
@@ -52,7 +52,7 @@ public class ParticleManager extends Particle {
         dimensionId = world.provider.getDimension();
     }
 
-    public synchronized void add(SplatterParticleBase particle) {
+    public void add(SplatterParticleBase particle) {
 //        BallisticBloodMod.LOGGER.log(Level.INFO, "add");
         if (particles.size() >= ForgeConfigHandler.client.maximumProjectileParticles) {
 //            BallisticBloodMod.LOGGER.log(Level.INFO, "expiring 25 projectiles");
@@ -63,7 +63,7 @@ public class ParticleManager extends Particle {
         particles.add(particle);
     }
 
-    public synchronized void clear() {
+    public void clear() {
         for (SplatterParticleBase particle : particles) {
             particle.setExpired();
         }
@@ -76,18 +76,16 @@ public class ParticleManager extends Particle {
         if (Minecraft.getMinecraft().world.provider.getDimension() != dimensionId) {
             return;
         }
-        synchronized (particles) {
-            GlStateManager.colorMaterial(GL11.GL_FRONT_AND_BACK, GL11.GL_DIFFUSE);
-            GlStateManager.enableColorMaterial();
-            GlStateManager.disableNormalize();
-            GlStateManager.enableBlend();
-            for (SplatterParticleBase particle : particles) {
-                particle.renderParticle(buffer, playerEntity, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
-            }
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-            GlStateManager.glBlendEquation(32774); // "add" blend function
-            GlStateManager.enableNormalize();
+        GlStateManager.colorMaterial(GL11.GL_FRONT_AND_BACK, GL11.GL_DIFFUSE);
+        GlStateManager.enableColorMaterial();
+        GlStateManager.disableNormalize();
+        GlStateManager.enableBlend();
+        for (SplatterParticleBase particle : particles) {
+            particle.renderParticle(buffer, playerEntity, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
         }
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        GlStateManager.glBlendEquation(32774); // "add" blend function
+        GlStateManager.enableNormalize();
     }
 
     @Override
@@ -107,11 +105,9 @@ public class ParticleManager extends Particle {
             return;
         }
 //        BallisticBloodMod.LOGGER.log(Level.INFO, "onUpdate");
-        synchronized (particles) {
-            for (SplatterParticleBase particle : particles) {
-                particle.onUpdate();
-            }
-            particles.removeIf(particle -> !particle.isAlive());
+        for (SplatterParticleBase particle : particles) {
+            particle.onUpdate();
         }
+        particles.removeIf(particle -> !particle.isAlive());
     }
 }

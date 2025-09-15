@@ -117,6 +117,9 @@ public class ClientHelper {
             // ParticleManager.onUpdate is called by the game to update all of our particles
             //   the function updates the initial particle's lifetime and updates the projectile and spray particles
 //            BallisticBloodMod.LOGGER.log(Level.INFO, "splatter");
+            if (ParticleManager.instance == null) {
+                ParticleManager.MakeParticleManager(world);
+            }
             ParticleManager.instance.add(mainParticle);
         }
     }
@@ -125,6 +128,9 @@ public class ClientHelper {
     public static SplatterParticleBase makeParticleBase(int type, World world, Vec3d pos, Vec3d dir) {
         if (ForgeConfigHandler.particleConfigIntMap.containsKey(type)) {
             ForgeConfigHandler.ParticleConfig cfg = ForgeConfigHandler.particleConfigIntMap.get(type);
+            if (cfg == null) {
+                return null;
+            }
             float v = cfg.velocity;
             SplatterParticleBase particle = new SplatterParticleBase(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
             particle.setType(type);
