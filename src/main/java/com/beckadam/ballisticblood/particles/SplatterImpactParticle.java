@@ -12,7 +12,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class SplatterImpactParticle extends SplatterParticleBase {
@@ -59,8 +58,12 @@ public class SplatterImpactParticle extends SplatterParticleBase {
     }
 
 
-    public void addSprayParticle(SplatterSprayParticle particle) {
+    public void addParticle(SplatterSprayParticle particle) {
         sprayParticles.add(particle);
+    }
+
+    public void addParticle(SplatterProjectileParticle particle) {
+        projectileParticles.add(particle);
     }
 
     @Override
@@ -74,6 +77,9 @@ public class SplatterImpactParticle extends SplatterParticleBase {
         for (SplatterSprayParticle sub : this.sprayParticles) {
             sub.onUpdate();
         }
+        for (SplatterProjectileParticle sub : this.projectileParticles) {
+            sub.onUpdate();
+        }
         spawnSubParticles();
     }
 
@@ -83,7 +89,7 @@ public class SplatterImpactParticle extends SplatterParticleBase {
         }
         ticksSinceLastEmission++;
         if (emissionRate > 0 && ticksSinceLastEmission >= (20.0f / emissionRate)) {
-            SplatterSprayParticle particle = ClientHelper.makeParticle(
+            SplatterSprayParticle particle = ClientHelper.makeSprayParticle(
                     particleType, world, getPositionVector(),
                     getDirectionVector().add(
                             CommonHelper.GetRandomNormalizedVector()
@@ -97,7 +103,7 @@ public class SplatterImpactParticle extends SplatterParticleBase {
                 particle.setParticleSubType(ParticleDisplayType.SPRAY);
                 particle.setLifetime(ForgeConfigHandler.client.sprayParticleLifetime, ForgeConfigHandler.client.sprayParticleFadeStart);
                 particle.randomizeParticleTexture();
-                addSprayParticle(particle);
+                addParticle(particle);
             }
         }
     }

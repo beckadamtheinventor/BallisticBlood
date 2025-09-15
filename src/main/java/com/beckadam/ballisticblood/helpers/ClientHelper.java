@@ -86,28 +86,28 @@ public class ClientHelper {
                 Vec3d dir = CommonHelper.GetProjectileParticleVelocity(direction, index, count, spreadVariance, spreadSize);
 
                 // create a projectile particle at the hit position using the velocity scaled by config
-                SplatterSprayParticle particle = makeParticle(cfg.type, world, position, dir.scale(ForgeConfigHandler.client.projectileParticleVelocity));
+                SplatterProjectileParticle projectileParticle = makeProjectileParticle(cfg.type, world, position, dir.scale(ForgeConfigHandler.client.projectileParticleVelocity));
 
                 // if the particle was successfully created...
-                if (particle != null) {
+                if (projectileParticle != null) {
                     // set the particle subtype and pick a random texture from the atlas
                     // (texture selected from rows 0, 1, 2, 3, and 4)
-                    particle.setParticleSubType(ParticleDisplayType.PROJECTILE);
+                    projectileParticle.setParticleSubType(ParticleDisplayType.PROJECTILE);
 
                     // randomize the particle texture
-                    particle.randomizeParticleTexture();
+                    projectileParticle.randomizeParticleTexture();
 
                     // set gravity from config
-                    particle.setGravity(ForgeConfigHandler.client.projectileParticleGravity);
+                    projectileParticle.setGravity(ForgeConfigHandler.client.projectileParticleGravity);
 
                     // set scale from config
-                    particle.setScale(ForgeConfigHandler.client.projectileParticleSize);
+                    projectileParticle.setScale(ForgeConfigHandler.client.projectileParticleSize);
 
                     // set lifetime specific to this projectile
-                    particle.setLifetime(ForgeConfigHandler.client.projectileParticleLifetime, ForgeConfigHandler.client.projectileParticleFadeStart);
+                    projectileParticle.setLifetime(ForgeConfigHandler.client.projectileParticleLifetime, ForgeConfigHandler.client.projectileParticleFadeStart);
 
                     // add the projectile particle to the main impact particle
-                    mainParticle.addSprayParticle(particle);
+                    mainParticle.addParticle(projectileParticle);
                 }
             }
             // finally, add the impact particle to the particle manager
@@ -140,8 +140,8 @@ public class ClientHelper {
         return null;
     }
 
-    ///  Create and initialize a Projectile or Spray particle at position (pos) with velocity (dir)
-    public static SplatterSprayParticle makeParticle(int type, World world, Vec3d pos, Vec3d dir) {
+    ///  Create and initialize a Spray particle at position (pos) with velocity (dir)
+    public static SplatterSprayParticle makeSprayParticle(int type, World world, Vec3d pos, Vec3d dir) {
         if (ForgeConfigHandler.particleConfigIntMap.containsKey(type)) {
             ForgeConfigHandler.ParticleConfig cfg = ForgeConfigHandler.particleConfigIntMap.get(type);
             float v = cfg.velocity;
@@ -154,4 +154,21 @@ public class ClientHelper {
         }
         return null;
     }
+
+    ///  Create and initialize a Projectile particle at position (pos) with velocity (dir)
+    public static SplatterProjectileParticle makeProjectileParticle(int type, World world, Vec3d pos, Vec3d dir) {
+        if (ForgeConfigHandler.particleConfigIntMap.containsKey(type)) {
+            ForgeConfigHandler.ParticleConfig cfg = ForgeConfigHandler.particleConfigIntMap.get(type);
+            float v = cfg.velocity;
+            SplatterProjectileParticle particle = new SplatterProjectileParticle(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
+            particle.setType(type);
+//            particle.setTexture(cfg.texture);
+            particle.setGravity(cfg.gravity);
+            particle.setFlip(random.nextBoolean(), random.nextBoolean(), random.nextBoolean());
+            return particle;
+        }
+        return null;
+    }
+
+
 }
