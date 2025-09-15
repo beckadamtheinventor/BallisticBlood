@@ -27,7 +27,7 @@ public class ParticleManager extends Particle {
     // (ConcurrentModification errors result otherwise)
     public static ParticleManager instance = null;
 
-    protected final List<SplatterParticleBase> particles = Collections.synchronizedList(new ArrayList<>());
+    protected final List<SplatterImpactParticle> particles = Collections.synchronizedList(new ArrayList<>());
     protected int dimensionId;
 
     public static void register(EventBus bus) {
@@ -52,7 +52,7 @@ public class ParticleManager extends Particle {
         dimensionId = world.provider.getDimension();
     }
 
-    public void add(SplatterParticleBase particle) {
+    public void add(SplatterImpactParticle particle) {
 //        BallisticBloodMod.LOGGER.log(Level.INFO, "add");
         if (particles.size() >= ForgeConfigHandler.client.maximumProjectileParticles) {
 //            BallisticBloodMod.LOGGER.log(Level.INFO, "expiring 25 projectiles");
@@ -68,6 +68,13 @@ public class ParticleManager extends Particle {
             particle.setExpired();
         }
         particles.clear();
+    }
+
+    public void prune() {
+        particles.removeIf(part -> !part.isAlive());
+        for (SplatterParticleBase particle : particles) {
+            particle.prune();
+        }
     }
 
     @Override
@@ -108,6 +115,6 @@ public class ParticleManager extends Particle {
         for (SplatterParticleBase particle : particles) {
             particle.onUpdate();
         }
-        particles.removeIf(particle -> !particle.isAlive());
+        prune();
     }
 }

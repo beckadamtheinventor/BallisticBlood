@@ -1,6 +1,6 @@
 package com.beckadam.ballisticblood.particles;
 
-public enum ParticleSubType {
+public enum ParticleDisplayType {
     BASE,
     IMPACT,
     PROJECTILE,
