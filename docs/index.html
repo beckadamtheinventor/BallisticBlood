@@ -197,7 +197,7 @@
 <body>
 <div class="container">
     <div class="header">
-        <h1><span class="particle-icon"></span>Splatterizer Config Wizard</h1>
+        <h1><span class="particle-icon"></span>Ballistic Blood Config Wizard</h1>
         <h2>Particle Type Configuration</h2>
     </div>
 
@@ -210,7 +210,7 @@
 
             <div class="input-group">
                 <label for="texture">Namespaced Texture Atlas</label>
-                <input type="text" id="texture" value="splatterizer:textures/particle/blood_particle.png">
+                <input type="text" id="texture" value="ballisticblood:textures/particle/blood_particle.png">
             </div>
 
             <div class="input-group">
@@ -226,16 +226,6 @@
             <div class="input-group">
                 <label for="gravity">Gravity Multiplier</label>
                 <input type="number" id="gravity" value="1.0" step="0.1">
-            </div>
-
-            <div class="input-group">
-                <label for="sprayVelocity">Spray Velocity Multiplier</label>
-                <input type="number" id="sprayVelocity" value="1.0" step="0.1">
-            </div>
-
-            <div class="input-group">
-                <label for="sprayRate">Spray Emission Rate (particles/sec)</label>
-                <input type="number" id="sprayRate" value="0.0" step="0.1">
             </div>
 
             <div class="input-group">
@@ -288,8 +278,6 @@
         let size = parseFloat(document.getElementById("size").value)
         let velocity = parseFloat(document.getElementById("velocity").value)
         let gravity = parseFloat(document.getElementById("gravity").value)
-        let sprayVelocity = parseFloat(document.getElementById("sprayVelocity").value)
-        let sprayRate = parseFloat(document.getElementById("sprayRate").value)
         let lighting = document.getElementById("lighting").checked
         let colorMultiplier = parseFloat(document.getElementById("colorMultiplier").value)
         let alphaMultiplier = parseFloat(document.getElementById("alphaMultiplier").value)
@@ -302,15 +290,22 @@
             size: size,
             velocity: velocity,
             gravity: gravity,
-            spray_velocity: sprayVelocity,
-            spray_rate: sprayRate,
-            lighting: lighting,
-            color_multiplier: colorMultiplier,
-            alpha_multiplier: alphaMultiplier,
-            blend_mode: blendMode,
-            blend_op: blendOp
         }
-
+        if (lighting == false) {
+          config.lighting = lighting
+        }
+        if (colorMultiplier != 1.0) {
+          config.color_multiplier = colorMultiplier
+        }
+        if (alphaMultiplier != 1.0) {
+          config.alpha_multiplier = alphaMultiplier
+        }
+        if (blendMode != "NORMAL" && blendMode != "SRC_ALPHA ONE_MINUS_SRC_ALPHA" && blendMode != "") {
+          config.blend_mode = blendMode
+        }
+        if (blendOp != "ADD" && blendOp != "") {
+          config.blend_op = blendOp
+        }
         document.getElementById("generated").value = JSON.stringify(config, null, 2)
     }
 </script>
