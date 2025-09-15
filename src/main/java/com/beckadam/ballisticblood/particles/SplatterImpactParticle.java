@@ -22,8 +22,8 @@ public class SplatterImpactParticle extends SplatterParticleBase {
 
     public SplatterImpactParticle(World world, double x, double y, double z, double vx, double vy, double vz) {
         super(world, x, y, z, vx, vy, vz);
-        sprayParticles = Collections.synchronizedList(new ArrayList<>());
-        projectileParticles = Collections.synchronizedList(new ArrayList<>());
+        sprayParticles = new ArrayList<>();
+        projectileParticles = new ArrayList<>();
     }
 
     @Override

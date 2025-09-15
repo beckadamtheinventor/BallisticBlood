@@ -53,18 +53,18 @@ public class ParticleManager extends Particle {
     }
 
     public void add(SplatterImpactParticle particle) {
-//        BallisticBloodMod.LOGGER.log(Level.INFO, "add");
-        if (particles.size() >= ForgeConfigHandler.client.maximumProjectileParticles) {
-//            BallisticBloodMod.LOGGER.log(Level.INFO, "expiring 25 projectiles");
-            for (int i=0; i<25; i++) {
-                particles.get(i).setExpired();
+        synchronized (particles) {
+            if (particles.size() >= ForgeConfigHandler.client.maximumProjectileParticles) {
+                for (int i = 0; i < 25; i++) {
+                    particles.get(i).setExpired();
+                }
             }
+            particles.add(particle);
         }
-        particles.add(particle);
     }
 
     public void clear() {
-        for (SplatterParticleBase particle : particles) {
+        for (SplatterImpactParticle particle : particles) {
             particle.setExpired();
         }
         particles.clear();
@@ -72,7 +72,7 @@ public class ParticleManager extends Particle {
 
     public void prune() {
         particles.removeIf(part -> !part.isAlive());
-        for (SplatterParticleBase particle : particles) {
+        for (SplatterImpactParticle particle : particles) {
             particle.prune();
         }
     }
@@ -87,8 +87,10 @@ public class ParticleManager extends Particle {
         GlStateManager.enableColorMaterial();
         GlStateManager.disableNormalize();
         GlStateManager.enableBlend();
-        for (SplatterParticleBase particle : particles) {
-            particle.renderParticle(buffer, playerEntity, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
+        synchronized (particles) {
+            for (SplatterImpactParticle particle : particles) {
+                particle.renderParticle(buffer, playerEntity, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
+            }
         }
         GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
         GlStateManager.glBlendEquation(32774); // "add" blend function
@@ -111,10 +113,11 @@ public class ParticleManager extends Particle {
         if (Minecraft.getMinecraft().world.provider.getDimension() != dimensionId) {
             return;
         }
-//        BallisticBloodMod.LOGGER.log(Level.INFO, "onUpdate");
-        for (SplatterParticleBase particle : particles) {
-            particle.onUpdate();
+        synchronized (particles) {
+            for (SplatterImpactParticle particle : particles) {
+                particle.onUpdate();
+            }
+            prune();
         }
-        prune();
     }
 }
