@@ -11,11 +11,31 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.Level;
 
+import java.util.ArrayList;
 import java.util.Random;
 
 @SideOnly(Side.CLIENT)
 public class ClientHelper {
     private static final Random random = new Random();
+    private static final ArrayList<SplatterParticleMain> mainParticleList = new ArrayList<>(512);
+
+    public static void clearParticles() {
+        for (SplatterParticleMain particle : mainParticleList) {
+            particle.setExpired();
+        }
+        mainParticleList.clear();
+    }
+
+    public static void clearParticles(int amount) {
+        for (int i=0; i<amount; i++) {
+            mainParticleList.get(i).setExpired();
+        }
+        mainParticleList.removeIf(particle -> !particle.isAlive());
+    }
+
+    public static int countParticles() {
+        return mainParticleList.size();
+    }
 
     ///  Spawn splatter particles for a given splatter type at position facing direction (also used for velocity) scaling by damage
     ///  Uses values from both client and server config
@@ -32,8 +52,14 @@ public class ClientHelper {
     public static void splatter(ForgeConfigHandler.ParticleConfig cfg, Vec3d position, Vec3d direction, float damage) {
         // if we have splatter particles disabled, return before doing anything
         if (!ForgeConfigHandler.client.enableSplatterParticles) {
+            clearParticles();
             return;
         }
+
+        if (countParticles() >= ForgeConfigHandler.client.maximumProjectileParticles) {
+            clearParticles(32);
+        }
+
         World world = Minecraft.getMinecraft().world;
         if (world == null) {
             return;
@@ -140,6 +166,7 @@ public class ClientHelper {
             mainParticle.addParticle(sprayParticle);
         }
         Minecraft.getMinecraft().effectRenderer.addEffect(mainParticle);
+        mainParticleList.add(mainParticle);
     }
 
     ///   Create and initialize a main (initial) particle at position (pos) with velocity (dir)

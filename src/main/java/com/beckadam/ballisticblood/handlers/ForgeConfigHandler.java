@@ -76,9 +76,9 @@ public class ForgeConfigHandler {
     }
 
 	public static class ClientConfig {
-//        @Config.Comment("Ensures only this many projectile particles will ever be drawn at a time.\nOlder particles will be replaced with newer ones.")
-//        @Config.Name("Maximum projectile particles")
-//        public int maximumProjectileParticles = 300;
+        @Config.Comment("Ensures only this many projectile particles will ever be drawn at a time.\nOlder particles will be replaced with newer ones.")
+        @Config.Name("Maximum projectile particles")
+        public int maximumProjectileParticles = 200;
 
         @Config.Comment("Experimental method to reduce the likelihood of decal particles being partially midair")
         @Config.Name("Enable experimental overhang clipping method")
