@@ -40,13 +40,11 @@ public class ClientHelper {
         }
         double spreadSize = ForgeConfigHandler.client.particleSpreadSize;
         double spreadVariance = ForgeConfigHandler.client.particleSpreadVariance;
-        int count = Math.min(
+        int projectileCount = Math.min(
                 ForgeConfigHandler.client.particleSpreadMax,
                 CommonHelper.ScaleCountByDamage(ForgeConfigHandler.client.particleSpreadCount, damage)
         );
-        if (count <= 0) {
-            return;
-        }
+        int sprayCount = ForgeConfigHandler.client.sprayParticleCount;
         GlStateManager.SourceFactor srcFactor = BlendModeHelper.getSourceFactor(cfg.blendMode[0]);
         GlStateManager.DestFactor destFactor = BlendModeHelper.getDestFactor(cfg.blendMode[1]);
         int blendOp = BlendModeHelper.getBlendFunction(cfg.blendOp);
@@ -54,120 +52,124 @@ public class ClientHelper {
 
         // Note: the main particle is just the spray emitter and doesn't render
         // The projectile particles and spray particles do render
+        SplatterParticleMain mainParticle = makeMainParticle(cfg, world, position, Vec3d.ZERO);
 
-        // create the main impact particle at the hit position with no velocity
-        SplatterImpactParticle mainParticle = makeImpactParticle(cfg.type, world, position, Vec3d.ZERO);
-        if (mainParticle != null) {
-            // set the particle subtype so the main impact particle doesn't get rendered
-            mainParticle.setParticleSubType(ParticleDisplayType.IMPACT);
+        // set the particle subtype so the main impact particle doesn't get rendered
+        mainParticle.setDisplayType(ParticleDisplayType.IMPACT);
 
-            // set the lifetime and fade start time
-            mainParticle.setLifetime(ForgeConfigHandler.client.particleLifetime, ForgeConfigHandler.client.particleLifetime);
+        // set the lifetime and fade start time
+        mainParticle.setLifetime(ForgeConfigHandler.client.particleLifetime, ForgeConfigHandler.client.particleLifetime);
 
-            // set no gravity so it stays in the same position
-            mainParticle.setGravity(0.0f);
+        // set no gravity so it stays in the same position
+        mainParticle.setGravity(0.0f);
 
-            // set the rate at which the impact particle emits spray particles
-            mainParticle.setEmissionRate(cfg.emissionRate);
+        // set color/alpha blending factors
+        mainParticle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
 
-            // set the velocity for emitted spray particles
-            mainParticle.setEmissionVelocity(cfg.emissionVelocity);
+        // create projectiles depending on config and damage amount
+        for (int index = 0; index < projectileCount; index++) {
+            // grab the direction/velocity vector for this particle
+            // (should spread in an arc-like pattern)
+            Vec3d dir = CommonHelper.GetProjectileParticleVelocity(direction, index, projectileCount, spreadVariance, spreadSize);
 
-            // set color/alpha blending factors
-            mainParticle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
+            // create a projectile particle at the hit position using the velocity scaled by config
+            SplatterParticleProjectile projectileParticle = makeProjectileParticle(cfg, world, position,
+                    dir.scale(ForgeConfigHandler.client.projectileParticleVelocity)
+            );
+
+            // set the particle subtype and pick a random texture from the atlas
+            // (texture selected from rows 0, 1, 2, 3, and 4)
+            projectileParticle.setDisplayType(ParticleDisplayType.PROJECTILE);
+
+            // randomize the particle texture
+            projectileParticle.randomizeParticleTexture();
+
+            // set gravity from config
+            projectileParticle.setGravity(ForgeConfigHandler.client.projectileParticleGravity);
+
+            // set scale from config
+            projectileParticle.setScale(ForgeConfigHandler.client.projectileParticleSize);
+
+            // set lifetime specific to this projectile
+            projectileParticle.setLifetime(ForgeConfigHandler.client.projectileParticleLifetime, ForgeConfigHandler.client.projectileParticleFadeStart);
+
+            // set blend mode/op and lighting
+            projectileParticle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
 
             // set the values to multiply texture color/alpha with when drawing
-            mainParticle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);
+            projectileParticle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);
 
-            // create projectiles depending on config and damage amount
-            for (int index = 0; index < count; index++) {
-                // grab the direction/velocity vector for this particle
-                // (should spread in an arc-like pattern)
-                Vec3d dir = CommonHelper.GetProjectileParticleVelocity(direction, index, count, spreadVariance, spreadSize);
-
-                // create a projectile particle at the hit position using the velocity scaled by config
-                SplatterProjectileParticle projectileParticle = makeProjectileParticle(cfg.type, world, position, dir.scale(ForgeConfigHandler.client.projectileParticleVelocity));
-
-                // if the particle was successfully created...
-                if (projectileParticle != null) {
-                    // set the particle subtype and pick a random texture from the atlas
-                    // (texture selected from rows 0, 1, 2, 3, and 4)
-                    projectileParticle.setParticleSubType(ParticleDisplayType.PROJECTILE);
-
-                    // randomize the particle texture
-                    projectileParticle.randomizeParticleTexture();
-
-                    // set gravity from config
-                    projectileParticle.setGravity(ForgeConfigHandler.client.projectileParticleGravity);
-
-                    // set scale from config
-                    projectileParticle.setScale(ForgeConfigHandler.client.projectileParticleSize);
-
-                    // set lifetime specific to this projectile
-                    projectileParticle.setLifetime(ForgeConfigHandler.client.projectileParticleLifetime, ForgeConfigHandler.client.projectileParticleFadeStart);
-
-                    // add the projectile particle to the main impact particle
-                    mainParticle.addParticle(projectileParticle);
-                }
-            }
-            // finally, add the impact particle to the particle manager
-            // ParticleManager.renderParticle is called by the game to draw all of our particle
-            //   the function draws the projectile and spray particles
-            // ParticleManager.onUpdate is called by the game to update all of our particles
-            //   the function updates the initial particle's lifetime and updates the projectile and spray particles
-//            BallisticBloodMod.LOGGER.log(Level.INFO, "splatter");
-            if (ParticleManager.instance == null) {
-                ParticleManager.MakeParticleManager(world);
-            }
-            ParticleManager.instance.add(mainParticle);
+            // add the projectile particle to the main impact particle
+            mainParticle.addParticle(projectileParticle);
         }
+
+        // create spray particles for initial hit
+        for (int index = 0; index < sprayCount; index++) {
+            // grab the direction/velocity vector for this particle
+            // (should spread in an arc-like pattern)
+            Vec3d dir = CommonHelper.GetRandomNormalizedVector();
+
+            // create a projectile particle at the hit position using the velocity scaled by config
+            SplatterParticleSpray sprayParticle = makeSprayParticle(cfg, world, position,
+                    dir.scale(ForgeConfigHandler.client.sprayParticleVelocity).add(position)
+            );
+
+            // set the particle subtype and pick a random texture from the atlas
+            // (texture selected from rows 0, 1, 2, 3, and 4)
+            sprayParticle.setDisplayType(ParticleDisplayType.SPRAY);
+
+            // randomize the particle texture
+            sprayParticle.randomizeParticleTexture();
+
+            // set gravity from config
+            sprayParticle.setGravity(ForgeConfigHandler.client.sprayParticleGravity);
+
+            // set scale from config
+            sprayParticle.setScale(ForgeConfigHandler.client.sprayParticleSize);
+
+            // set lifetime specific to this projectile
+            sprayParticle.setLifetime(ForgeConfigHandler.client.sprayParticleLifetime, ForgeConfigHandler.client.sprayParticleFadeStart);
+
+            // set blend mode/op and lighting
+            sprayParticle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
+
+            // set the values to multiply texture color/alpha with when drawing
+            sprayParticle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);
+
+            // add the projectile particle to the main impact particle
+            mainParticle.addParticle(sprayParticle);
+        }
+        Minecraft.getMinecraft().effectRenderer.addEffect(mainParticle);
     }
 
-    ///   Create and initialize an Impact (initial) particle at position (pos) with velocity (dir)
-    public static SplatterImpactParticle makeImpactParticle(int type, World world, Vec3d pos, Vec3d dir) {
-        if (ForgeConfigHandler.particleConfigIntMap.containsKey(type)) {
-            ForgeConfigHandler.ParticleConfig cfg = ForgeConfigHandler.particleConfigIntMap.get(type);
-            if (cfg == null) {
-                return null;
-            }
-            float v = cfg.velocity;
-            SplatterImpactParticle particle = new SplatterImpactParticle(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
-            particle.setType(type);
-            particle.setTexture(cfg.texture);
-            particle.setGravity(cfg.gravity);
-            return particle;
-        }
-        return null;
+    ///   Create and initialize a main (initial) particle at position (pos) with velocity (dir)
+    public static SplatterParticleMain makeMainParticle(ForgeConfigHandler.ParticleConfig cfg, World world, Vec3d pos, Vec3d dir) {
+        float v = cfg.velocity;
+        SplatterParticleMain particle = new SplatterParticleMain(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
+        particle.setType(cfg.type);
+        particle.setTexture(cfg.texture);
+        particle.setGravity(cfg.gravity);
+        return particle;
     }
 
     ///  Create and initialize a Spray particle at position (pos) with velocity (dir)
-    public static SplatterSprayParticle makeSprayParticle(int type, World world, Vec3d pos, Vec3d dir) {
-        if (ForgeConfigHandler.particleConfigIntMap.containsKey(type)) {
-            ForgeConfigHandler.ParticleConfig cfg = ForgeConfigHandler.particleConfigIntMap.get(type);
-            float v = cfg.velocity;
-            SplatterSprayParticle particle = new SplatterSprayParticle(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
-            particle.setType(type);
-//            particle.setTexture(cfg.texture);
-            particle.setGravity(cfg.gravity);
-            particle.setFlip(random.nextBoolean(), random.nextBoolean(), random.nextBoolean());
-            return particle;
-        }
-        return null;
+    public static SplatterParticleSpray makeSprayParticle(ForgeConfigHandler.ParticleConfig cfg, World world, Vec3d pos, Vec3d dir) {
+        float v = cfg.velocity;
+        SplatterParticleSpray particle = new SplatterParticleSpray(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
+        particle.setType(cfg.type);
+        particle.setGravity(cfg.gravity);
+        particle.setFlip(random.nextBoolean(), random.nextBoolean(), random.nextBoolean());
+        return particle;
     }
 
     ///  Create and initialize a Projectile particle at position (pos) with velocity (dir)
-    public static SplatterProjectileParticle makeProjectileParticle(int type, World world, Vec3d pos, Vec3d dir) {
-        if (ForgeConfigHandler.particleConfigIntMap.containsKey(type)) {
-            ForgeConfigHandler.ParticleConfig cfg = ForgeConfigHandler.particleConfigIntMap.get(type);
-            float v = cfg.velocity;
-            SplatterProjectileParticle particle = new SplatterProjectileParticle(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
-            particle.setType(type);
-//            particle.setTexture(cfg.texture);
-            particle.setGravity(cfg.gravity);
-            particle.setFlip(random.nextBoolean(), random.nextBoolean(), random.nextBoolean());
-            return particle;
-        }
-        return null;
+    public static SplatterParticleProjectile makeProjectileParticle(ForgeConfigHandler.ParticleConfig cfg, World world, Vec3d pos, Vec3d dir) {
+        float v = cfg.velocity;
+        SplatterParticleProjectile particle = new SplatterParticleProjectile(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
+        particle.setType(cfg.type);
+        particle.setGravity(cfg.gravity);
+        particle.setFlip(random.nextBoolean(), random.nextBoolean(), random.nextBoolean());
+        return particle;
     }
 
 

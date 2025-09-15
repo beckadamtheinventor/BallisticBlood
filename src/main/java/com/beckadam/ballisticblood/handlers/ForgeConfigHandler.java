@@ -76,9 +76,9 @@ public class ForgeConfigHandler {
     }
 
 	public static class ClientConfig {
-        @Config.Comment("Ensures only this many projectile particles will ever be drawn at a time.\nOlder particles will be replaced with newer ones.")
-        @Config.Name("Maximum projectile particles")
-        public int maximumProjectileParticles = 300;
+//        @Config.Comment("Ensures only this many projectile particles will ever be drawn at a time.\nOlder particles will be replaced with newer ones.")
+//        @Config.Name("Maximum projectile particles")
+//        public int maximumProjectileParticles = 300;
 
         @Config.Comment("Experimental method to reduce the likelihood of decal particles being partially midair")
         @Config.Name("Enable experimental overhang clipping method")
@@ -181,7 +181,7 @@ public class ForgeConfigHandler {
 
         @Config.Comment("Total number of spray particles to emit from the hit position")
         @Config.Name("Total number of spray particles to spawn per hit")
-        public int subParticleTotal = 10;
+        public int sprayParticleCount = 10;
 
         @Config.Comment("Projectile particles emitted is the spread count plus the damage times this value")
         @Config.Name("Extra projectile particles per heart of damage")
@@ -194,7 +194,7 @@ public class ForgeConfigHandler {
 		public static void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent event) {
 			if(event.getModID().equals(BallisticBloodMod.MODID)) {
 				ConfigManager.sync(BallisticBloodMod.MODID, Config.Type.INSTANCE);
-                ParseSplatterizerConfig();
+                ParseConfig();
 			}
 		}
 	}
@@ -209,8 +209,6 @@ public class ForgeConfigHandler {
         public final String[] blendMode;
         public final boolean lighting;
         public final String blendOp;
-        public final float emissionRate;
-        public final float emissionVelocity;
         public final float colorMultiplier;
         public final float alphaMultiplier;
 
@@ -242,16 +240,6 @@ public class ForgeConfigHandler {
                 gravity = JsonUtils.getFloat(json, "gravity");
             } else {
                 gravity = 1.0f;
-            }
-            if (JsonUtils.hasField(json, "spray_velocity")) {
-                emissionVelocity = JsonUtils.getFloat(json, "spray_velocity");
-            } else {
-                emissionVelocity = 1.0f;
-            }
-            if (JsonUtils.hasField(json, "spray_rate")) {
-                emissionRate = JsonUtils.getFloat(json, "spray_rate");
-            } else {
-                emissionRate = 0.0f;
             }
             blendMode = new String[2];
             blendMode[0] = blendMode[1] = "NORMAL";
@@ -290,7 +278,7 @@ public class ForgeConfigHandler {
         }
     }
 
-    public static void ParseSplatterizerConfig() {
+    public static void ParseConfig() {
         if (particleConfigMap == null) {
             particleConfigMap = new HashMap<>();
         } else {

@@ -109,7 +109,7 @@ public class SplatterParticleBase extends Particle {
         this.particleType = type;
     }
 
-    public void setParticleSubType(ParticleDisplayType type) {
+    public void setDisplayType(ParticleDisplayType type) {
         displayType = type;
     }
     public void randomizeParticleTexture() {
@@ -544,7 +544,7 @@ public class SplatterParticleBase extends Particle {
 
                     this.onGround = true;
                     this.oldDisplayType = this.displayType;
-                    setParticleSubType(ParticleDisplayType.DECAL);
+                    setDisplayType(ParticleDisplayType.DECAL);
 //                    this.prevPosX = posX;
 //                    this.prevPosY = posY;
 //                    this.prevPosZ = posZ;

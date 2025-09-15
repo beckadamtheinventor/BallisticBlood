@@ -28,7 +28,6 @@ public class ClientProxy extends CommonProxy {
     }
     @Override
     public void AttackEntityFromHandler(Entity entity, DamageSource source, float amount) {
-//        SplatterizerMod.LOGGER.log(Level.INFO, "ClientProxy.AttackEntityFromHandler");
         int particleType = CommonHelper.GetParticleTypeForEntity(entity);
         // Spawn particles of particleType using position, velocity (scaled by damage amount)
         ClientHelper.splatter(

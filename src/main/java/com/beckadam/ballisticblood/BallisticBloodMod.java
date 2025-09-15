@@ -3,7 +3,6 @@ package com.beckadam.ballisticblood;
 import com.beckadam.ballisticblood.handlers.AttackEntityFromHandler;
 import com.beckadam.ballisticblood.handlers.BallisticBloodCommandHandler;
 import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
-import com.beckadam.ballisticblood.particles.ParticleManager;
 import com.beckadam.ballisticblood.particles.ParticleTypeManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
@@ -12,13 +11,9 @@ import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import com.beckadam.ballisticblood.proxy.CommonProxy;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Mod(modid = BallisticBloodMod.MODID, version = BallisticBloodMod.VERSION, name = BallisticBloodMod.NAME)
 public class BallisticBloodMod {
@@ -44,13 +39,12 @@ public class BallisticBloodMod {
         PROXY.init();
         if (event.getSide() == Side.CLIENT) {
             BallisticBloodCommandHandler.register();
-            ParticleManager.register(MinecraftForge.EVENT_BUS);
         }
     }
 
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {
-        ForgeConfigHandler.ParseSplatterizerConfig();
+        ForgeConfigHandler.ParseConfig();
         BallisticBloodMod.PROXY.LoadTextures();
         completedLoading = true;
     }

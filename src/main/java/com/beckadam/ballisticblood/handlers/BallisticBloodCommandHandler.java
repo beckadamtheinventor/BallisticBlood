@@ -1,7 +1,6 @@
 package com.beckadam.ballisticblood.handlers;
 
 import com.beckadam.ballisticblood.BallisticBloodMod;
-import com.beckadam.ballisticblood.particles.ParticleManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommand;
@@ -11,16 +10,12 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraftforge.client.ClientCommandHandler;
-import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
-import net.minecraftforge.fml.common.eventhandler.EventBus;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -57,9 +52,8 @@ public class BallisticBloodCommandHandler implements ICommand {
         }
         String action = strings[0];
         if (action.equals("reload")) {
-            ParticleManager.MakeParticleManager(sender.getEntityWorld());
             ConfigManager.load(BallisticBloodMod.MODID, Config.Type.INSTANCE);
-            ForgeConfigHandler.ParseSplatterizerConfig();
+            ForgeConfigHandler.ParseConfig();
             sender.sendMessage(new TextComponentTranslation("command.ballisticblood.reloaded"));
         } else if (action.equals("disable")) {
             ForgeConfigHandler.client.enableSplatterParticles = false;
@@ -75,7 +69,7 @@ public class BallisticBloodCommandHandler implements ICommand {
                             "command.ballisticblood.disabled"
             ));
         } else if (action.equals("clear")) {
-            ParticleManager.MakeParticleManager(sender.getEntityWorld());
+            Minecraft.getMinecraft().effectRenderer.clearEffects(Minecraft.getMinecraft().world);
             sender.sendMessage(new TextComponentTranslation("command.ballisticblood.cleared"));
         }
     }
