@@ -75,11 +75,7 @@ public class SplatterParticleMain extends SplatterParticleBase {
 
     @Override
     public void onUpdate() {
-        // check whether particles are disabled; destroy if so
-        if (!ForgeConfigHandler.client.enableSplatterParticles) {
-            this.setExpired();
-            return;
-        }
+        super.onUpdate();
         if (!sprayParticles.isEmpty()) {
             Iterator<SplatterParticleSpray> iterator = sprayParticles.iterator();
             while (iterator.hasNext()) {

@@ -111,7 +111,7 @@ public class ClientHelper {
 
             // create a projectile particle at the hit position using the velocity scaled by config
             SplatterParticleSpray sprayParticle = makeSprayParticle(cfg, world, position,
-                    dir.scale(ForgeConfigHandler.client.sprayParticleVelocity).add(position)
+                    dir.scale(ForgeConfigHandler.client.sprayParticleVelocity).add(direction)
             );
 
             // set the particle subtype and pick a random texture from the atlas
@@ -154,7 +154,7 @@ public class ClientHelper {
 
     ///  Create and initialize a Spray particle at position (pos) with velocity (dir)
     public static SplatterParticleSpray makeSprayParticle(ForgeConfigHandler.ParticleConfig cfg, World world, Vec3d pos, Vec3d dir) {
-        float v = cfg.velocity;
+        float v = cfg.sprayVelocity;
         SplatterParticleSpray particle = new SplatterParticleSpray(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
         particle.setType(cfg.type);
         particle.setGravity(cfg.gravity);

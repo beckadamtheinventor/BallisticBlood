@@ -251,6 +251,15 @@ public class SplatterParticleBase extends Particle {
 
     @Override
     public void onUpdate() {
+        // check whether particles are disabled; destroy if so
+        if (!ForgeConfigHandler.client.enableSplatterParticles) {
+            this.setExpired();
+            return;
+        }
+        // check whether this particle has expired; destroy if so
+        if (this.particleAge++ >= this.particleMaxAge) {
+            this.setExpired();
+        }
         this.prevPosX = posX;
         this.prevPosY = posY;
         this.prevPosZ = posZ;
@@ -273,13 +282,12 @@ public class SplatterParticleBase extends Particle {
                     this.setExpired();
                     return;
                 }
-            } else if (this.particleAge++ >= this.particleMaxAge) {
-                this.setExpired();
-                return;
             }
         }
-        // update velocity
-        this.motionY -= this.particleGravity;
+        if (!onGround) {
+            // update velocity
+            this.motionY -= this.particleGravity;
+        }
         // try to move the particle first
         this.move(this.motionX, this.motionY, this.motionZ);
         // if the particle is currently a decal
@@ -469,15 +477,18 @@ public class SplatterParticleBase extends Particle {
     }
 
     public void computeFacing(double dx, double dy, double dz, double origX, double origY, double origZ) {
-        if (origY != dy) {
-            this.hitNormal = new Vec3d(0.0, -Math.signum(origY), 0.0);
-            this.facing = (origY < 0 ? EnumFacing.DOWN : EnumFacing.UP);
-        } else if (origX != dx) {
-            this.hitNormal = new Vec3d(-Math.signum(origX), 0.0, 0.0);
-            this.facing = (origX < 0 ? EnumFacing.WEST : EnumFacing.EAST);
-        } else if (origZ != dz) {
+        double ddx = Math.abs(posX - prevPosX);
+        double ddy = Math.abs(posY - prevPosY);
+        double ddz = Math.abs(posZ - prevPosZ);
+        if (dz != origZ && ddz < ddx && ddz < ddy) {
             this.hitNormal = new Vec3d(0.0, 0.0, -Math.signum(origZ));
             this.facing = (origZ < 0 ? EnumFacing.NORTH : EnumFacing.SOUTH);
+        } else if (dx != origX && ddx < ddz) {
+            this.hitNormal = new Vec3d(-Math.signum(origX), 0.0, 0.0);
+            this.facing = (origX < 0 ? EnumFacing.WEST : EnumFacing.EAST);
+        } else if (dy != origY) {
+            this.hitNormal = new Vec3d(0.0, -Math.signum(origY), 0.0);
+            this.facing = (origY < 0 ? EnumFacing.DOWN : EnumFacing.UP);
         }
     }
 
@@ -488,22 +499,19 @@ public class SplatterParticleBase extends Particle {
         double origZ = dz;
         if (this.canCollide && world != null) {
             // compute new bounding box based on the existing bounding box and the world
-            AxisAlignedBB bb = this.getBoundingBox();
-            List<AxisAlignedBB> worldCollisionBoxes = world.getCollisionBoxes(null, bb.expand(dx, dy, dz));
+            List<AxisAlignedBB> worldCollisionBoxes = world.getCollisionBoxes(null, this.getBoundingBox().expand(dx, dy, dz));
             for(AxisAlignedBB axisalignedbb : worldCollisionBoxes) {
-                dy = axisalignedbb.calculateYOffset(bb, dy);
+                dy = axisalignedbb.calculateYOffset(this.getBoundingBox(), dy);
             }
-            this.setBoundingBox(bb.offset(0, dy, 0));
-            bb = this.getBoundingBox();
+            this.setBoundingBox(this.getBoundingBox().offset(0, dy, 0));
             for(AxisAlignedBB axisalignedbb : worldCollisionBoxes) {
-                dx = axisalignedbb.calculateXOffset(bb, dx);
+                dx = axisalignedbb.calculateXOffset(this.getBoundingBox(), dx);
             }
-            this.setBoundingBox(bb.offset(dx, 0, 0));
-            bb = this.getBoundingBox();
+            this.setBoundingBox(this.getBoundingBox().offset(dx, 0, 0));
             for(AxisAlignedBB axisalignedbb : worldCollisionBoxes) {
-                dz = axisalignedbb.calculateZOffset(bb, dz);
+                dz = axisalignedbb.calculateZOffset(this.getBoundingBox(), dz);
             }
-            this.setBoundingBox(bb.offset(0, 0, dz));
+            this.setBoundingBox(this.getBoundingBox().offset(0, 0, dz));
         } else {
             this.setBoundingBox(this.getBoundingBox().offset(dx, dy, dz));
         }
@@ -520,16 +528,16 @@ public class SplatterParticleBase extends Particle {
                 // figure out which face the particle landed on
                 computeFacing(dx, dy, dz, origX, origY, origZ);
                 BlockPos pos = new BlockPos(posX, posY, posZ);
-                float quadOffset = -ForgeConfigHandler.client.decalSurfaceOffsetMultiplier * (0.5f * rand.nextFloat() + 0.5f);
+                float quadOffset = -ForgeConfigHandler.client.decalSurfaceOffsetMultiplier * (1.5f * rand.nextFloat() + 0.5f);
                 if (facing == EnumFacing.UP || facing == EnumFacing.DOWN) {
                     this.posY = pos.getY() + (origY < 0 ? 0 : 1);
-                    quadOffset *= (float)Math.signum(origY);
+                    quadOffset = (float)(quadOffset*Math.signum(origY));
                 } else if (facing == EnumFacing.EAST || facing == EnumFacing.WEST) {
                     this.posX = pos.getX() + (origX < 0 ? 0 : 1);
-                    quadOffset = (float)(quadOffset*Math.signum(origX) - SMALL_AMOUNT * 1.8f);
+                    quadOffset = (float)(quadOffset*Math.signum(origX) - 1.333f * SMALL_AMOUNT);
                 } else if (facing == EnumFacing.NORTH || facing == EnumFacing.SOUTH) {
                     this.posZ = pos.getZ() + (origZ < 0 ? 0 : 1);
-                    quadOffset = (float)(quadOffset*Math.signum(origZ) - SMALL_AMOUNT * (origZ < 0 ? 1.666f : 2.0f));
+                    quadOffset = (float)(quadOffset*Math.signum(origZ) - 1.333f * SMALL_AMOUNT);
                 } else {
                     return;
                 }

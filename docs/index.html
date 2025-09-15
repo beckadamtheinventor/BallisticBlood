@@ -204,8 +204,8 @@
     <div class="form-content">
         <div class="form-grid">
             <div class="input-group">
-                <label for="typeName">Name</label>
-                <input type="text" id="typeName" value="BLOOD">
+                <label for="type_name">Name</label>
+                <input type="text" id="type_name" value="BLOOD">
             </div>
 
             <div class="input-group">
@@ -229,23 +229,28 @@
             </div>
 
             <div class="input-group">
-                <label for="colorMultiplier">Color Multiplier</label>
-                <input type="number" id="colorMultiplier" value="1.0" step="0.1">
+                <label for="spray_velocity">Spray Velocity Multiplier</label>
+                <input type="number" id="spray_velocity" value="1.0" step="0.1">
             </div>
 
             <div class="input-group">
-                <label for="alphaMultiplier">Alpha Multiplier</label>
-                <input type="number" id="alphaMultiplier" value="1.0" step="0.1">
+                <label for="color_multiplier">Color Multiplier</label>
+                <input type="number" id="color_multiplier" value="1.0" step="0.1">
             </div>
 
             <div class="input-group">
-                <label for="blendMode">Blend Mode</label>
-                <input type="text" id="blendMode" value="NORMAL">
+                <label for="alpha_multiplier">Alpha Multiplier</label>
+                <input type="number" id="alpha_multiplier" value="1.0" step="0.1">
             </div>
 
             <div class="input-group">
-                <label for="blendOp">Blend Operation</label>
-                <input type="text" id="blendOp" value="ADD">
+                <label for="blend_mode">Blend Mode</label>
+                <input type="text" id="blend_mode" value="NORMAL">
+            </div>
+
+            <div class="input-group">
+                <label for="blend_op">Blend Operation</label>
+                <input type="text" id="blend_op" value="ADD">
             </div>
 
             <div class="input-group">
@@ -273,38 +278,40 @@
 
 <script>
     function parse() {
-        let typeName = document.getElementById("typeName").value
+        let type_name = document.getElementById("type_name").value
         let texture = document.getElementById("texture").value
         let size = parseFloat(document.getElementById("size").value)
         let velocity = parseFloat(document.getElementById("velocity").value)
+        let spray_velocity = parseFloat(document.getElementById("spray_velocity").value)
         let gravity = parseFloat(document.getElementById("gravity").value)
         let lighting = document.getElementById("lighting").checked
-        let colorMultiplier = parseFloat(document.getElementById("colorMultiplier").value)
-        let alphaMultiplier = parseFloat(document.getElementById("alphaMultiplier").value)
-        let blendMode = document.getElementById("blendMode").value
-        let blendOp = document.getElementById("blendOp").value
+        let color_multiplier = parseFloat(document.getElementById("color_multiplier").value)
+        let alpha_multiplier = parseFloat(document.getElementById("alpha_multiplier").value)
+        let blend_mode = document.getElementById("blend_mode").value
+        let blend_op = document.getElementById("blend_op").value
 
         let config = {
-            name: typeName,
+            name: type_name,
             texture: texture,
             size: size,
             velocity: velocity,
             gravity: gravity,
+            spray_velocity: spray_velocity,
         }
         if (lighting == false) {
           config.lighting = lighting
         }
-        if (colorMultiplier != 1.0) {
-          config.color_multiplier = colorMultiplier
+        if (color_multiplier != 1.0) {
+          config.color_multiplier = color_multiplier
         }
-        if (alphaMultiplier != 1.0) {
-          config.alpha_multiplier = alphaMultiplier
+        if (alpha_multiplier != 1.0) {
+          config.alpha_multiplier = alpha_multiplier
         }
-        if (blendMode != "NORMAL" && blendMode != "SRC_ALPHA ONE_MINUS_SRC_ALPHA" && blendMode != "") {
-          config.blend_mode = blendMode
+        if (blend_mode != "NORMAL" && blend_mode != "SRC_ALPHA ONE_MINUS_SRC_ALPHA" && blend_mode != "") {
+          config.blend_mode = blend_mode
         }
-        if (blendOp != "ADD" && blendOp != "") {
-          config.blend_op = blendOp
+        if (blend_op != "ADD" && blend_op != "") {
+          config.blend_op = blend_op
         }
         document.getElementById("generated").value = JSON.stringify(config, null, 2)
     }

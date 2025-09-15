@@ -203,6 +203,7 @@ public class ForgeConfigHandler {
         public final int type;
         public final String typeName;
         public final float velocity;
+        public final float sprayVelocity;
         public final float gravity;
         public final float size;
         public final ResourceLocation texture;
@@ -240,6 +241,11 @@ public class ForgeConfigHandler {
                 gravity = JsonUtils.getFloat(json, "gravity");
             } else {
                 gravity = 1.0f;
+            }
+            if (JsonUtils.hasField(json, "spray_velocity")) {
+                sprayVelocity = JsonUtils.getFloat(json, "spray_velocity");
+            } else {
+                sprayVelocity = 1.0f;
             }
             blendMode = new String[2];
             blendMode[0] = blendMode[1] = "NORMAL";
