@@ -32,7 +32,7 @@ public class CommonProxy {
         BallisticBloodMod.PROXY.sendMessageParticle(
                 entity.dimension, particleType,
                 CommonHelper.GetParticlePosition(entity, source),
-                CommonHelper.GetParticleVelocity(entity.getPositionVector(), source),
+                CommonHelper.GetParticleVelocity(entity, source),
                 amount
         );
     }

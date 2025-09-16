@@ -56,19 +56,23 @@ public class CommonHelper {
         return target.getPositionVector();
     }
 
-    public static Vec3d GetParticleVelocity(Vec3d target, DamageSource source) {
+    public static Vec3d GetParticleVelocity(Entity target, DamageSource source) {
         Entity sourceEntity = source.getImmediateSource();
         Entity trueSource = source.getTrueSource();
         if (sourceEntity == null || trueSource == null) {
             return Vec3d.ZERO;
         }
+        // for explosions, splatter outward from the explosion
         // for projectiles, splatter in the direction it's moving.
         // otherwise, use a weighted sum of the entity's motion vector
         // and the distance vector (normalized) from the entity to the target.
-        if (source.isProjectile()) {
+        if (source.isExplosion()) {
+            Vec3d dist = target.getPositionVector().subtract(sourceEntity.getPositionVector());
+            return dist.normalize().scale(Math.min(25.0, 10.0 / dist.lengthSquared()));
+        } else if (source.isProjectile()) {
             return new Vec3d(sourceEntity.motionX, sourceEntity.motionY, sourceEntity.motionZ);
         } else {
-            return target.subtract(trueSource.getPositionVector()).normalize()
+            return target.getPositionVector().subtract(trueSource.getPositionVector()).normalize()
                     .add(new Vec3d(trueSource.motionX, trueSource.motionY, trueSource.motionZ).scale(2.0f));
         }
     }

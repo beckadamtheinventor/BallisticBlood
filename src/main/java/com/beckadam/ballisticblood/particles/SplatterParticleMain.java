@@ -33,11 +33,11 @@ public class SplatterParticleMain extends SplatterParticleBase {
             ipy = (float)(entityIn.prevPosY + (entityIn.posY - entityIn.prevPosY) * partialTicks);
             ipz = (float)(entityIn.prevPosZ + (entityIn.posZ - entityIn.prevPosZ) * partialTicks);
 
-            GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
-            GlStateManager.glBlendEquation(blendOp);
+            GlStateManager.disableNormalize();
             GlStateManager.colorMaterial(GL11.GL_FRONT_AND_BACK, GL11.GL_DIFFUSE);
             GlStateManager.enableColorMaterial();
-            GlStateManager.disableNormalize();
+            GlStateManager.glBlendEquation(blendOp);
+            GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
             GlStateManager.enableBlend();
             if (lightingEnabled) {
                 GlStateManager.enableLighting();
@@ -55,9 +55,12 @@ public class SplatterParticleMain extends SplatterParticleBase {
                 sub.renderParticle(buffer, entityIn, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
             }
             Tessellator.getInstance().draw();
-            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-            GlStateManager.glBlendEquation(GL14.GL_FUNC_ADD);
+            GlStateManager.disableBlend();
+//            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+//            GlStateManager.glBlendEquation(GL14.GL_FUNC_ADD);
             GlStateManager.enableNormalize();
+            GlStateManager.enableLighting();
+            GlStateManager.depthMask(true);
         }
     }
 

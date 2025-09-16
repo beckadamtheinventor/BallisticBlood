@@ -119,9 +119,6 @@ public class ClientHelper {
             // set lifetime specific to this projectile
             projectileParticle.setLifetime(ForgeConfigHandler.client.projectileParticleLifetime, ForgeConfigHandler.client.projectileParticleFadeStart);
 
-            // set blend mode/op and lighting
-            projectileParticle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
-
             // set the values to multiply texture color/alpha with when drawing
             projectileParticle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);
 
@@ -131,13 +128,12 @@ public class ClientHelper {
 
         // create spray particles for initial hit
         for (int index = 0; index < sprayCount; index++) {
-            // grab the direction/velocity vector for this particle
-            // (should spread in an arc-like pattern)
+            // get a random direction per spray particle
             Vec3d dir = CommonHelper.GetRandomNormalizedVector();
 
             // create a projectile particle at the hit position using the velocity scaled by config
             SplatterParticleSpray sprayParticle = makeSprayParticle(cfg, world, position,
-                    dir.scale(ForgeConfigHandler.client.sprayParticleVelocity).add(direction)
+                    dir.add(direction.normalize()).scale(ForgeConfigHandler.client.sprayParticleVelocity)
             );
 
             // set the particle subtype and pick a random texture from the atlas
@@ -155,9 +151,6 @@ public class ClientHelper {
 
             // set lifetime specific to this projectile
             sprayParticle.setLifetime(ForgeConfigHandler.client.sprayParticleLifetime, ForgeConfigHandler.client.sprayParticleFadeStart);
-
-            // set blend mode/op and lighting
-            sprayParticle.setBlendFactors(srcFactor, destFactor, blendOp, lightingEnabled);
 
             // set the values to multiply texture color/alpha with when drawing
             sprayParticle.setMultipliers(cfg.colorMultiplier, cfg.alphaMultiplier);

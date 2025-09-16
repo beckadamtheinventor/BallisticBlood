@@ -33,7 +33,7 @@ public class ClientProxy extends CommonProxy {
         ClientHelper.splatter(
                 particleType,
                 CommonHelper.GetParticlePosition(entity, source),
-                CommonHelper.GetParticleVelocity(entity.getPositionVector(), source),
+                CommonHelper.GetParticleVelocity(entity, source),
                 amount
         );
     }

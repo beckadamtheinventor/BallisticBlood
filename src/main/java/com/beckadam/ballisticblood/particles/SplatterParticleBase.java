@@ -23,11 +23,12 @@ import java.util.List;
 public class SplatterParticleBase extends Particle {
     public ResourceLocation splatterParticleTexture;
 
+    protected static final int[] hFlipVertexIndex = new int[] { 1, 0, 3, 2 };
+    protected static final int[] vFlipVertexIndex = new int[] { 2, 3, 0, 1 };
     protected static final float particleTextureWidth = 8.0f;
     protected static final float particleTextureHeight = 8.0f;
     protected static final double SMALL_AMOUNT = 1.0f / 16.0f;
     protected static final double TINY_AMOUNT = 1.0f / 64.0f;
-    protected static EntityPlayerSP player;
     protected static float ipx, ipy, ipz;
 
     protected GlStateManager.SourceFactor blendSourceFactor = GlStateManager.SourceFactor.SRC_ALPHA;
@@ -43,10 +44,7 @@ public class SplatterParticleBase extends Particle {
     protected Vec2f[] finalUVOffsets;
     protected EnumFacing facing;
     protected ParticleDisplayType displayType, oldDisplayType;
-    protected int ticksSinceLastEmission = 0;
-    protected float emissionRate;
     protected int particleType;
-    protected float particleSubVelocity;
     protected float colorMultiplier = 1.0f;
     protected float alphaMultiplier = 1.0f;
     protected boolean hFlip, vFlip, rotate;
@@ -67,8 +65,6 @@ public class SplatterParticleBase extends Particle {
         finalUVOffsets = new Vec2f[] { Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO };
         displayType = ParticleDisplayType.BASE;
         splatterParticleTexture = null;
-        player = Minecraft.getMinecraft().player;
-        this.emissionRate = 0;
         hFlip = vFlip = rotate = false;
     }
 
@@ -114,10 +110,10 @@ public class SplatterParticleBase extends Particle {
     }
     public void randomizeParticleTexture() {
         switch (displayType) {
-            case PROJECTILE:
             case DECAL:
                 this.particleTextureIndexY = rand.nextInt(5); // rows 0, 1, 2, 3, 4
                 break;
+            case PROJECTILE:
             case SPRAY:
                 this.particleTextureIndexY = rand.nextInt(3) + 5; // rows 5, 6, 7
                 break;
@@ -126,14 +122,7 @@ public class SplatterParticleBase extends Particle {
             default:
                 break;
         }
-    }
-
-    public void setEmissionRate(float rate) {
-        this.emissionRate = rate;
-    }
-
-    public void setEmissionVelocity(float particleSubVelocity) {
-        this.particleSubVelocity = particleSubVelocity;
+        this.particleTextureIndexX = rand.nextInt((int)particleTextureWidth);
     }
 
     @Override
@@ -259,6 +248,11 @@ public class SplatterParticleBase extends Particle {
         // check whether this particle has expired; destroy if so
         if (this.particleAge++ >= this.particleMaxAge) {
             this.setExpired();
+            return;
+        }
+        if (this.posY <= -128.0) {
+            this.setExpired();
+            return;
         }
         this.prevPosX = posX;
         this.prevPosY = posY;
@@ -308,7 +302,7 @@ public class SplatterParticleBase extends Particle {
         }
         int hovering = 0;
         for (Vec3d vert : this.finalQuad) {
-            BlockPos pos = new BlockPos(vert.add(this.getPositionVector()).subtract(this.hitNormal));
+            BlockPos pos = new BlockPos(vert.add(this.getPositionVector()).subtract(this.hitNormal.scale(SMALL_AMOUNT)));
             IBlockState block = this.world.getBlockState(pos);
             if (block.getCollisionBoundingBox(this.world, pos) == null) {
                 hovering++;
@@ -318,12 +312,12 @@ public class SplatterParticleBase extends Particle {
     }
 
     public boolean checkIsCovered() {
-        return checkIsColliding(hitNormal.scale(0.5));
+        return checkIsColliding(hitNormal.scale(SMALL_AMOUNT));
     }
 
     public boolean checkIsColliding(Vec3d dir) {
-        AxisAlignedBB boundingBox = this.getBoundingBox();
-        List<AxisAlignedBB> worldCollisionBoxes = world.getCollisionBoxes(null, boundingBox.offset(dir.x, dir.y, dir.z));
+        AxisAlignedBB boundingBox = this.getBoundingBox().offset(dir);
+        List<AxisAlignedBB> worldCollisionBoxes = world.getCollisionBoxes(Minecraft.getMinecraft().player, boundingBox.expand(2.0, 2.0, 2.0));
         for(AxisAlignedBB box : worldCollisionBoxes) {
             if (box.intersects(boundingBox)) {
                 return true;
@@ -332,26 +326,82 @@ public class SplatterParticleBase extends Particle {
         return false;
     }
 
+    private static Vec3d snapOffsetX(Vec3d v, Vec3d p, AxisAlignedBB box) {
+        if (v.x < 0) {
+            return new Vec3d(box.minX-p.x, v.y, v.z);
+        } else if (v.x > 0) {
+            return new Vec3d(box.maxX-p.x, v.y, v.z);
+        }
+        return null;
+    }
+
+    private static Vec3d snapOffsetY(Vec3d v, Vec3d p, AxisAlignedBB box) {
+        if (v.y < 0) {
+            return new Vec3d(v.x, box.minY-p.y, v.z);
+        } else if (v.y > 0) {
+            return new Vec3d(v.x, box.maxY-p.y, v.z);
+        }
+        return null;
+    }
+
+    private static Vec3d snapOffsetZ(Vec3d v, Vec3d p, AxisAlignedBB box) {
+        if (v.z < 0) {
+            return new Vec3d(v.x, v.y, box.minZ-p.z);
+        } else if (v.z > 0) {
+            return new Vec3d(v.x, v.y, box.maxZ-p.z);
+        }
+        return null;
+    }
+
     private static Vec3d getCorrectOffsetToSnapTo(Vec3d v, Vec3d p, Vec3d n, AxisAlignedBB box) {
-        if (n.x == 0) {
-            if (v.x < 0) {
-                v = new Vec3d(box.minX-p.x, v.y, v.z);
-            } else if (v.x > 0) {
-                v = new Vec3d(box.maxX-p.x, v.y, v.z);
+        Vec3d sx = snapOffsetX(v, p, box);
+        Vec3d sy = snapOffsetY(v, p, box);
+        Vec3d sz = snapOffsetZ(v, p, box);
+        double dx = sx != null ? sx.lengthSquared() : 0;
+        double dy = sy != null ? sy.lengthSquared() : 0;
+        double dz = sz != null ? sz.lengthSquared() : 0;
+        dx = dx == 0 ? 1e6 : dx;
+        dy = dy == 0 ? 1e6 : dy;
+        dz = dz == 0 ? 1e6 : dz;
+        // this is the ugly if ladder that picks the axis with the least non-zero distance from the collision box
+        if (dx < dy && dx < dz) {
+            if (n.x == 0 && sx != null) {
+                return sx;
             }
-        }
-        if (n.y == 0) {
-            if (v.y < 0) {
-                v = new Vec3d(v.x, box.minY-p.y, v.z);
-            } else if (v.y > 0) {
-                v = new Vec3d(v.x, box.maxY-p.y, v.z);
+            if (dz < dy) {
+                if (n.z == 0 && sz != null) {
+                    return sz;
+                }
+                if (n.y == 0 && sy != null) {
+                    return sy;
+                }
+            } else {
+                if (n.y == 0 && sy != null) {
+                    return sy;
+                }
+                if (n.z == 0 && sz != null) {
+                    return sz;
+                }
             }
-        }
-        if (n.z == 0) {
-            if (v.z < 0) {
-                v = new Vec3d(v.x, v.y, box.minZ-p.z);
-            } else if (v.z > 0) {
-                v = new Vec3d(v.x, v.y, box.maxZ-p.z);
+        } else if (dz < dy) {
+            if (n.z == 0 && sz != null) {
+                return sz;
+            }
+            if (n.y == 0 && sy != null) {
+                return sy;
+            }
+            if (n.x == 0 && sx != null) {
+                return sx;
+            }
+        } else {
+            if (n.y == 0 && sy != null) {
+                return sy;
+            }
+            if (n.z == 0 && sz != null) {
+                return sz;
+            }
+            if (n.x == 0 && sx != null) {
+                return sx;
             }
         }
         return v;
@@ -367,19 +417,19 @@ public class SplatterParticleBase extends Particle {
 
     private Vec3d getQuadVertexOffset(int i, Vec3d n) {
         Vec3d[] table = new Vec3d[] {
-                new Vec3d(1, 0, 1),
-                new Vec3d(1, 0, 0),
-                new Vec3d(0, 0, 0),
-                new Vec3d(0, 0, 1)
+                new Vec3d( 1, 0,  1),
+                new Vec3d( 1, 0, -1),
+                new Vec3d(-1, 0, -1),
+                new Vec3d(-1, 0,  1)
         };
         if (n.y != 0) {
-            return new Vec3d(table[i].x, 0, table[i].z).scale(SMALL_AMOUNT);
+            return new Vec3d(table[i].x, 0, table[i].z).scale(SMALL_AMOUNT*0.5);
         }
         if (n.x != 0) {
-            return new Vec3d(0, table[i].x, table[i].z).scale(SMALL_AMOUNT);
+            return new Vec3d(0, table[i].x, table[i].z).scale(SMALL_AMOUNT*0.5);
         }
         if (n.z != 0) {
-            return new Vec3d(table[i].x, table[i].z, 0).scale(SMALL_AMOUNT);
+            return new Vec3d(table[i].x, table[i].z, 0).scale(SMALL_AMOUNT*0.5);
         }
         return Vec3d.ZERO;
     }
@@ -396,20 +446,20 @@ public class SplatterParticleBase extends Particle {
         if (!ForgeConfigHandler.client.enableExperimentalOverhangClipping) {
             return;
         }
-        Vec3d[] orig = finalQuad.clone();
 
-        double w = this.width*this.decalScale*0.5+2.0;
+        double w = this.width*this.decalScale*0.5+2.5;
         List<AxisAlignedBB> worldCollisionBoxes =
-                world.getCollisionBoxes(null, new AxisAlignedBB(
+                world.getCollisionBoxes(Minecraft.getMinecraft().player, new AxisAlignedBB(
                         this.getPositionVector().subtract(w,w,w),
                         this.getPositionVector().add(w,w,w)
                 ));
         if (worldCollisionBoxes.isEmpty()) {
+            this.setExpired();
             return;
         }
-        int anchors = 4;
-        // get a quad identical to the final quad, offset by a small amount against the normal direction
-        Vec3d mid = getPositionVector().subtract(hitNormal.scale(SMALL_AMOUNT));
+        // get a position that is in the middle of the quad, offset against the normal direction
+        Vec3d mid = finalQuad[0].add(finalQuad[1]).add(finalQuad[2]).add(finalQuad[3]).scale(0.25)
+                .add(getPositionVector()).subtract(hitNormal.scale(SMALL_AMOUNT));
         // find the bounding box directly underneath the decal
         AxisAlignedBB anchorBox = null;
         for (AxisAlignedBB box : worldCollisionBoxes) {
@@ -420,11 +470,33 @@ public class SplatterParticleBase extends Particle {
         }
         // if a bounding box was found directly beneath
         if (anchorBox != null) {
-            // for each vertex of the bounding box
+            // for each edge of the quad
+            for (int i = 0; i < finalQuad.length; i++) {
+                Vec3d v = finalQuad[i].add(finalQuad[(i+1)&3])
+                        .scale(0.45)
+                        .subtract(hitNormal.scale(SMALL_AMOUNT))
+                        .add(getPositionVector());
+                boolean anchored = false;
+                for (AxisAlignedBB box : worldCollisionBoxes) {
+                    if (box.contains(v)) {
+                        anchored = true;
+                        break;
+                    }
+                }
+                if (!anchored) {
+                    // get the absolute position to snap the first vertex to
+                    Vec3d boxVec = getCorrectOffsetToSnapTo(finalQuad[i], getPositionVector(), hitNormal, anchorBox);
+                    // offset both vertices to align with the bounding box
+                    Vec3d temp = perAxisTernary(boxVec, finalQuad[i], hitNormal);
+                    finalQuad[(i+1)&3] = finalQuad[(i+1)&3].add(temp).subtract(finalQuad[i]);
+                    finalQuad[i] = temp;
+                }
+            }
+            // for each vertex of the quad box
             for (int i = 0; i < finalQuad.length; i++) {
                 // get a position just barely inside the decal's bounding box
                 // that is next to the corner
-                Vec3d v = finalQuad[i].add(getQuadVertexOffset(i, hitNormal)).add(getPositionVector()).subtract(hitNormal.scale(SMALL_AMOUNT));
+                Vec3d v = finalQuad[i].subtract(getQuadVertexOffset(i, hitNormal)).add(getPositionVector()).subtract(hitNormal.scale(SMALL_AMOUNT));
                 //            double dx=v.x, dy=v.y, dz=v.z;
                 boolean anchored = false;
                 for (AxisAlignedBB box : worldCollisionBoxes) {
@@ -434,16 +506,20 @@ public class SplatterParticleBase extends Particle {
                     }
                 }
                 if (!anchored) {
-                    anchors--;
                     // get the absolute position to snap the vertex to
                     Vec3d boxVec = getCorrectOffsetToSnapTo(finalQuad[i], getPositionVector(), hitNormal, anchorBox);
-                    // if the movement is larger than a small amount
-//                    if (v2.lengthSquared() >= SMALL_AMOUNT) {
                     // offset the vertex to align it with the bounding box
-//                        SplatterizerMod.LOGGER.log(Level.INFO, i + " from " + finalQuad[i].add(this.getPositionVector()));
                     finalQuad[i] = perAxisTernary(boxVec, finalQuad[i], hitNormal);
-//                        SplatterizerMod.LOGGER.log(Level.INFO, i + " to " + finalQuad[i].add(this.getPositionVector()));
-//                    }
+                    // check if vertex is now anchored after being moved
+                    v = finalQuad[i].scale(0.99).add(getPositionVector()).subtract(hitNormal.scale(SMALL_AMOUNT));
+                    for (AxisAlignedBB box : worldCollisionBoxes) {
+                        if (box.contains(v)) {
+                            anchored = true;
+                        }
+                    }
+                    if (!anchored) {
+                        this.setExpired();;
+                    }
                 }
             }
         }
@@ -451,27 +527,17 @@ public class SplatterParticleBase extends Particle {
         if (finalUVOffsets == null) {
             finalUVOffsets = new Vec2f[4];
         }
+        Vec3d[] orig = CommonHelper.GetAxisAlignedQuad(facing, this.width * this.decalScale);
         for (int i = 0; i < finalUVOffsets.length; i++) {
-            if (finalUVOffsets[i] == null) {
-                finalUVOffsets[i] = Vec2f.ZERO;
-            }
+            Vec3d ud = finalQuad[i].subtract(orig[i]).scale(1.0f / (decalScale * width * particleTextureWidth));
             if (hitNormal.x == 0) {
                 if (hitNormal.y == 0) {
-                    finalUVOffsets[i] = new Vec2f(
-                            finalUVOffsets[i].x+(float)(finalQuad[i].x-orig[i].x)/(decalScale * width * particleTextureWidth),
-                            finalUVOffsets[i].y+(float)(finalQuad[i].y-orig[i].y)/(decalScale * width * particleTextureHeight)
-                    );
+                    finalUVOffsets[i] = new Vec2f((float)ud.x, (float)ud.y);
                 } else if (hitNormal.z == 0) {
-                    finalUVOffsets[i] = new Vec2f(
-                            finalUVOffsets[i].x+(float)(finalQuad[i].z-orig[i].z)/(decalScale * width * particleTextureWidth),
-                            finalUVOffsets[i].y+(float)(finalQuad[i].x-orig[i].x)/(decalScale * width * particleTextureHeight)
-                    );
+                    finalUVOffsets[i] = new Vec2f((float)ud.x, (float)ud.z);
                 }
             } else if (hitNormal.y == 0) {
-                finalUVOffsets[i] = new Vec2f(
-                        finalUVOffsets[i].x+(float)(finalQuad[i].y-orig[i].y)/(decalScale * width * particleTextureWidth),
-                        finalUVOffsets[i].y+(float)(finalQuad[i].z-orig[i].z)/(decalScale * width * particleTextureHeight)
-                );
+                finalUVOffsets[i] = new Vec2f((float)ud.z, (float)ud.y);
             }
         }
     }
@@ -499,7 +565,7 @@ public class SplatterParticleBase extends Particle {
         double origZ = dz;
         if (this.canCollide && world != null) {
             // compute new bounding box based on the existing bounding box and the world
-            List<AxisAlignedBB> worldCollisionBoxes = world.getCollisionBoxes(null, this.getBoundingBox().expand(dx, dy, dz));
+            List<AxisAlignedBB> worldCollisionBoxes = world.getCollisionBoxes(Minecraft.getMinecraft().player, this.getBoundingBox().expand(dx, dy, dz));
             for(AxisAlignedBB axisalignedbb : worldCollisionBoxes) {
                 dy = axisalignedbb.calculateYOffset(this.getBoundingBox(), dy);
             }

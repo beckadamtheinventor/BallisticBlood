@@ -59,17 +59,17 @@ public class ForgeConfigHandler {
         @Config.Name("Splatter Type List")
         public String[] particleConfig = new String[] {
                 "{\"name\":\"BLOOD\",\"texture\":\"ballisticblood:textures/particle/blood_particle.png\",\"size\":1," +
-                        "\"gravity\":1,\"velocity\":1,\"spray_rate\":4,\"spray_velocity\":0.25,\"blend\":\"SRC_ALPHA SRC_COLOR\"}",
+                        "\"gravity\":1,\"velocity\":1,\"spray_velocity\":0.25,\"blend\":\"SRC_ALPHA SRC_COLOR\"}",
                 "{\"name\":\"DUST\",\"texture\":\"ballisticblood:textures/particle/dust_particle.png\",\"size\":1," +
-                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_rate\":0,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
+                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
                 "{\"name\":\"ASH\",\"texture\":\"ballisticblood:textures/particle/ash_particle.png\",\"size\":1," +
-                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_rate\":0,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
+                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
                 "{\"name\":\"SLIME\",\"texture\":\"ballisticblood:textures/particle/slime_particle.png\",\"size\":0.8," +
-                        "\"gravity\":2,\"velocity\":1.2,\"spray_rate\":4,\"spray_velocity\":0.3," +
+                        "\"gravity\":2,\"velocity\":1.2,\"spray_velocity\":0.3," +
                         "\"blend\":\"ONE ONE_MINUS_SRC_ALPHA\",\"blend_op\":\"MAX\",\"lighting\":false," +
                         "\"color_multiplier\":2.0}",
                 "{\"name\":\"ENDER\",\"texture\":\"ballisticblood:textures/particle/ender_particle.png\",\"size\":1," +
-                        "\"gravity\":1,\"velocity\":1,\"spray_rate\":4,\"spray_velocity\":0.25," +
+                        "\"gravity\":1,\"velocity\":1,\"spray_velocity\":0.25," +
                         "\"blend\":\"SRC_ALPHA SRC_COLOR\"}",
         };
 
@@ -165,7 +165,7 @@ public class ForgeConfigHandler {
 
         @Config.Comment("Measured in ticks. There are 20 ticks in a second.\nNote that this doesn't work for all blend modes!")
         @Config.Name("Spray particle fade start in ticks")
-        public int sprayParticleFadeStart = 20;
+        public int sprayParticleFadeStart = 40;
 
         @Config.Comment("If this is false, no splatter particles will be rendered!")
         @Config.Name("Enable splatter particles")
