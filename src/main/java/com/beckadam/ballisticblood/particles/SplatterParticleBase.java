@@ -328,27 +328,27 @@ public class SplatterParticleBase extends Particle {
 
     private static Vec3d snapOffsetX(Vec3d v, Vec3d p, AxisAlignedBB box) {
         if (v.x < 0) {
-            return new Vec3d(box.minX-p.x, v.y, v.z);
+            return new Vec3d(box.minX+TINY_AMOUNT-p.x, v.y, v.z);
         } else if (v.x > 0) {
-            return new Vec3d(box.maxX-p.x, v.y, v.z);
+            return new Vec3d(box.maxX-TINY_AMOUNT-p.x, v.y, v.z);
         }
         return null;
     }
 
     private static Vec3d snapOffsetY(Vec3d v, Vec3d p, AxisAlignedBB box) {
         if (v.y < 0) {
-            return new Vec3d(v.x, box.minY-p.y, v.z);
+            return new Vec3d(v.x, box.minY+TINY_AMOUNT-p.y, v.z);
         } else if (v.y > 0) {
-            return new Vec3d(v.x, box.maxY-p.y, v.z);
+            return new Vec3d(v.x, box.maxY-TINY_AMOUNT-p.y, v.z);
         }
         return null;
     }
 
     private static Vec3d snapOffsetZ(Vec3d v, Vec3d p, AxisAlignedBB box) {
         if (v.z < 0) {
-            return new Vec3d(v.x, v.y, box.minZ-p.z);
+            return new Vec3d(v.x, v.y, box.minZ+TINY_AMOUNT-p.z);
         } else if (v.z > 0) {
-            return new Vec3d(v.x, v.y, box.maxZ-p.z);
+            return new Vec3d(v.x, v.y, box.maxZ-TINY_AMOUNT-p.z);
         }
         return null;
     }
@@ -459,7 +459,7 @@ public class SplatterParticleBase extends Particle {
         }
         // get a position that is in the middle of the quad, offset against the normal direction
         Vec3d mid = finalQuad[0].add(finalQuad[1]).add(finalQuad[2]).add(finalQuad[3]).scale(0.25)
-                .add(getPositionVector()).subtract(hitNormal.scale(SMALL_AMOUNT));
+                .add(getPositionVector()).subtract(hitNormal.scale(SMALL_AMOUNT*2.0));
         // find the bounding box directly underneath the decal
         AxisAlignedBB anchorBox = null;
         for (AxisAlignedBB box : worldCollisionBoxes) {
@@ -473,7 +473,7 @@ public class SplatterParticleBase extends Particle {
             // for each edge of the quad
             for (int i = 0; i < finalQuad.length; i++) {
                 Vec3d v = finalQuad[i].add(finalQuad[(i+1)&3])
-                        .scale(0.45)
+                        .scale(0.499)
                         .subtract(hitNormal.scale(SMALL_AMOUNT))
                         .add(getPositionVector());
                 boolean anchored = false;

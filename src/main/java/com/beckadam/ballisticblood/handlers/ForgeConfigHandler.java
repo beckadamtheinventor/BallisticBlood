@@ -34,6 +34,8 @@ public class ForgeConfigHandler {
     @Config.Ignore
     public static boolean needsTextureLoad = true;
 
+
+
     public static class ServerConfig {
         @Config.Comment("entity=type eg. minecraft:pig=BLOOD")
         @Config.Name("Entity splatter types")
