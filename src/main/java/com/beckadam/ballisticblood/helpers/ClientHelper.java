@@ -68,7 +68,7 @@ public class ClientHelper {
         double spreadVariance = ForgeConfigHandler.client.particleSpreadVariance;
         int projectileCount = Math.min(
                 ForgeConfigHandler.client.particleSpreadMax,
-                CommonHelper.ScaleCountByDamage(ForgeConfigHandler.client.particleSpreadCount, ForgeConfigHandler.client.sprayParticlePerHeart, damage)
+                CommonHelper.ScaleCountByDamage(ForgeConfigHandler.client.particleSpreadCount, ForgeConfigHandler.client.extraParticlesPerHeartOfDamage, damage)
         );
         int sprayCount = Math.min(
                 ForgeConfigHandler.client.sprayParticleMax,
@@ -169,6 +169,7 @@ public class ClientHelper {
     public static SplatterParticleMain makeMainParticle(ForgeConfigHandler.ParticleConfig cfg, World world, Vec3d pos, Vec3d dir) {
         float v = cfg.velocity;
         SplatterParticleMain particle = new SplatterParticleMain(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
+        particle.setTextureTiling(cfg.tiling[0], cfg.tiling[1]);
         particle.setType(cfg.type);
         particle.setTexture(cfg.texture);
         particle.setGravity(cfg.gravity);
@@ -179,6 +180,7 @@ public class ClientHelper {
     public static SplatterParticleSpray makeSprayParticle(ForgeConfigHandler.ParticleConfig cfg, World world, Vec3d pos, Vec3d dir) {
         float v = cfg.sprayVelocity;
         SplatterParticleSpray particle = new SplatterParticleSpray(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
+        particle.setTextureTiling(cfg.tiling[0], cfg.tiling[1]);
         particle.setType(cfg.type);
         particle.setGravity(cfg.gravity);
         particle.setFlip(random.nextBoolean(), random.nextBoolean(), random.nextBoolean());
@@ -189,6 +191,7 @@ public class ClientHelper {
     public static SplatterParticleProjectile makeProjectileParticle(ForgeConfigHandler.ParticleConfig cfg, World world, Vec3d pos, Vec3d dir) {
         float v = cfg.velocity;
         SplatterParticleProjectile particle = new SplatterParticleProjectile(world, pos.x, pos.y, pos.z, v*dir.x, v*dir.y, v*dir.z);
+        particle.setTextureTiling(cfg.tiling[0], cfg.tiling[1]);
         particle.setType(cfg.type);
         particle.setGravity(cfg.gravity);
         particle.setFlip(random.nextBoolean(), random.nextBoolean(), random.nextBoolean());

@@ -25,8 +25,6 @@ public class SplatterParticleBase extends Particle {
 
     protected static final int[] hFlipVertexIndex = new int[] { 1, 0, 3, 2 };
     protected static final int[] vFlipVertexIndex = new int[] { 2, 3, 0, 1 };
-    protected static final float particleTextureWidth = 8.0f;
-    protected static final float particleTextureHeight = 8.0f;
     protected static final double SMALL_AMOUNT = 1.0f / 16.0f;
     protected static final double TINY_AMOUNT = 1.0f / 64.0f;
     protected static float ipx, ipy, ipz;
@@ -37,6 +35,8 @@ public class SplatterParticleBase extends Particle {
     protected boolean lightingEnabled = true;
     protected int fadeStart;
     protected float decalScale;
+    protected float particleTextureWidth = 8.0f;
+    protected float particleTextureHeight = 8.0f;
 
     protected Vec3d hitNormal;
     protected Vec3d hitOffset;
@@ -66,6 +66,11 @@ public class SplatterParticleBase extends Particle {
         displayType = ParticleDisplayType.BASE;
         splatterParticleTexture = null;
         hFlip = vFlip = rotate = false;
+    }
+
+    public void setTextureTiling(int x, int y) {
+        particleTextureWidth = x;
+        particleTextureHeight = y;
     }
 
     public void setLifetime(int lifetime, int fadeStart) {
@@ -125,6 +130,7 @@ public class SplatterParticleBase extends Particle {
                 break;
         }
         this.particleTextureIndexX = rand.nextInt((int)particleTextureWidth);
+        this.particleTextureIndexY %= (int)particleTextureHeight;
     }
 
     @Override

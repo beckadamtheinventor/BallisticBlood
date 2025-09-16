@@ -61,18 +61,20 @@ public class ForgeConfigHandler {
         @Config.Name("Splatter Type List")
         public String[] particleConfig = new String[] {
                 "{\"name\":\"BLOOD\",\"texture\":\"ballisticblood:textures/particle/blood_particle.png\",\"size\":1," +
-                        "\"gravity\":1,\"velocity\":1,\"spray_velocity\":0.25,\"blend\":\"SRC_ALPHA SRC_COLOR\"}",
+                        "\"gravity\":1,\"velocity\":1,\"spray_velocity\":0.25,\"blend\":\"NORMAL\"}",
                 "{\"name\":\"DUST\",\"texture\":\"ballisticblood:textures/particle/dust_particle.png\",\"size\":1," +
-                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
+                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false," +
+                        "\"tiling\":\"8,1\"}",
                 "{\"name\":\"ASH\",\"texture\":\"ballisticblood:textures/particle/ash_particle.png\",\"size\":1," +
-                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false}",
+                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false." +
+                        "\"tiling\":\"8,1\"}",
                 "{\"name\":\"SLIME\",\"texture\":\"ballisticblood:textures/particle/slime_particle.png\",\"size\":0.8," +
                         "\"gravity\":2,\"velocity\":1.2,\"spray_velocity\":0.3," +
                         "\"blend\":\"ONE ONE_MINUS_SRC_ALPHA\",\"blend_op\":\"MAX\",\"lighting\":false," +
                         "\"color_multiplier\":2.0}",
                 "{\"name\":\"ENDER\",\"texture\":\"ballisticblood:textures/particle/ender_particle.png\",\"size\":1," +
                         "\"gravity\":1,\"velocity\":1,\"spray_velocity\":0.25," +
-                        "\"blend\":\"SRC_ALPHA SRC_COLOR\"}",
+                        "\"blend\":\"NORMAL\"}",
         };
 
     }
@@ -218,6 +220,7 @@ public class ForgeConfigHandler {
         public final String blendOp;
         public final float colorMultiplier;
         public final float alphaMultiplier;
+        public final int[] tiling;
 
         public ParticleConfig(String config) throws RuntimeException {
             JsonObject json = new JsonParser().parse(config).getAsJsonObject();
@@ -252,6 +255,18 @@ public class ForgeConfigHandler {
                 sprayVelocity = JsonUtils.getFloat(json, "spray_velocity");
             } else {
                 sprayVelocity = 1.0f;
+            }
+            tiling = new int[] {8, 8};
+            if (JsonUtils.hasField(json, "tiling")) {
+                String[] t = JsonUtils.getString(json, "tiling").split(",");
+                if (t.length >= 1) {
+                    tiling[0] = Integer.parseInt(t[0]);
+                    if (t.length >= 2) {
+                        tiling[1] = Integer.parseInt(t[1]);
+                    } else {
+                        tiling[1] = tiling[0];
+                    }
+                }
             }
             blendMode = new String[2];
             blendMode[0] = blendMode[1] = "NORMAL";

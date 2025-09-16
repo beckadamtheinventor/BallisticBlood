@@ -4,10 +4,9 @@ import java.util.HashMap;
 
 public class ParticleTypeManager {
     private int count;
-    private final HashMap<String, Integer> types;
+    private final HashMap<String, Integer> types = new HashMap<>();
 
     public ParticleTypeManager() {
-        types = new HashMap<>();
         count = 0;
     }
     public void init() {
