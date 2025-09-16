@@ -5,13 +5,13 @@ import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.fml.common.eventhandler.EventBus;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-public class AttackEntityFromHandler {
+public class LivingDamageEventHandler {
     @SubscribeEvent
     public static void LivingDamageEvent(LivingDamageEvent event) {
         BallisticBloodMod.PROXY.AttackEntityFromHandler(event.getEntity(), event.getSource(), event.getAmount());
     }
 
     public static void register(EventBus eventBus) {
-        eventBus.register(AttackEntityFromHandler.class);
+        eventBus.register(LivingDamageEventHandler.class);
     }
 }

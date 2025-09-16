@@ -84,7 +84,7 @@ public class ForgeConfigHandler {
 
         @Config.Comment("Experimental method to reduce the likelihood of decal particles being partially midair")
         @Config.Name("Enable experimental overhang clipping method")
-        public boolean enableExperimentalOverhangClipping = false;
+        public boolean enableExperimentalOverhangClipping = true;
 
         @Config.Comment("The number of vertices of a decal quad to allow midair before making the particle fall")
         @Config.Name("Floating vertex fall threshold")
@@ -94,10 +94,6 @@ public class ForgeConfigHandler {
         @Config.Comment("(advanced) set the surface offset multiplier for decal particles landed on surfaces")
         @Config.Name("Decal surface offset mutliplier")
         public float decalSurfaceOffsetMultiplier = 0.01f;
-
-        @Config.Comment("Rough distance to move decal textures when considered midair. Set to 0 to disable this mechanic.")
-        @Config.Name("Decal pop-off multiplier")
-        public float particlePopOffMultiplier = 0.1f;
 
         @Config.Comment("Measured in ticks. There are 20 ticks in a second.\nThis is the lifetime of the initial hit particle emitter.\nMake sure this is greater than or equal to the other lifetimes.")
         @Config.Name("Lifetime of splatter particles in ticks")
@@ -181,9 +177,17 @@ public class ForgeConfigHandler {
         @Config.Name("Maximum projectile particles per splatter")
         public int particleSpreadMax = 24;
 
-        @Config.Comment("Total number of spray particles to emit from the hit position")
-        @Config.Name("Total number of spray particles to spawn per hit")
+        @Config.Comment("Base number of spray particles to emit from the hit position")
+        @Config.Name("Base number of spray particles to spawn per hit")
         public int sprayParticleCount = 10;
+
+        @Config.Comment("Additional spray particles to emit from the hit position")
+        @Config.Name("Additional spray particles to spawn per heart of damage")
+        public float sprayParticlePerHeart = 1.0f;
+
+        @Config.Comment("Maximum spray particles to emit from the hit position")
+        @Config.Name("Maximum number of spray particles to spawn per hit")
+        public int sprayParticleMax = 10;
 
         @Config.Comment("Projectile particles emitted is the spread count plus the damage times this value")
         @Config.Name("Extra projectile particles per heart of damage")
@@ -251,8 +255,8 @@ public class ForgeConfigHandler {
             }
             blendMode = new String[2];
             blendMode[0] = blendMode[1] = "NORMAL";
-            if (JsonUtils.hasField(json, "blend_mode")) {
-                String[] mode = JsonUtils.getString(json, "blend_mode").split(" ");
+            if (JsonUtils.hasField(json, "blend")) {
+                String[] mode = JsonUtils.getString(json, "blend").split(" ");
                 if (mode.length == 1) {
                     blendMode[0] = blendMode[1] = mode[0];
                 } else if (mode.length >= 2) {

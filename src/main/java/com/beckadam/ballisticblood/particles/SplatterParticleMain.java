@@ -1,5 +1,6 @@
 package com.beckadam.ballisticblood.particles;
 
+import com.beckadam.ballisticblood.BallisticBloodMod;
 import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
 import com.beckadam.ballisticblood.helpers.ClientHelper;
 import com.beckadam.ballisticblood.helpers.CommonHelper;
@@ -11,6 +12,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.World;
+import org.apache.logging.log4j.Level;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 
@@ -36,8 +38,8 @@ public class SplatterParticleMain extends SplatterParticleBase {
             GlStateManager.disableNormalize();
             GlStateManager.colorMaterial(GL11.GL_FRONT_AND_BACK, GL11.GL_DIFFUSE);
             GlStateManager.enableColorMaterial();
-            GlStateManager.glBlendEquation(blendOp);
-            GlStateManager.blendFunc(blendSourceFactor, blendDestFactor);
+            GlStateManager.glBlendEquation(this.blendOp);
+            GlStateManager.blendFunc(this.blendSourceFactor, this.blendDestFactor);
             GlStateManager.enableBlend();
             if (lightingEnabled) {
                 GlStateManager.enableLighting();
@@ -56,8 +58,8 @@ public class SplatterParticleMain extends SplatterParticleBase {
             }
             Tessellator.getInstance().draw();
             GlStateManager.disableBlend();
-//            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-//            GlStateManager.glBlendEquation(GL14.GL_FUNC_ADD);
+            GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+            GlStateManager.glBlendEquation(GL14.GL_FUNC_ADD);
             GlStateManager.enableNormalize();
             GlStateManager.enableLighting();
             GlStateManager.depthMask(true);
@@ -79,6 +81,9 @@ public class SplatterParticleMain extends SplatterParticleBase {
     @Override
     public void onUpdate() {
         super.onUpdate();
+//        if ((this.particleAge & 7) == 0) {
+//            BallisticBloodMod.LOGGER.log(Level.INFO, "SrcFactor: " + this.blendSourceFactor + " DestFactor: " + this.blendDestFactor);
+//        }
         if (!sprayParticles.isEmpty()) {
             Iterator<SplatterParticleSpray> iterator = sprayParticles.iterator();
             while (iterator.hasNext()) {

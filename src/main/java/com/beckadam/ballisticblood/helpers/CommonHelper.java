@@ -77,8 +77,8 @@ public class CommonHelper {
         }
     }
 
-    public static int ScaleCountByDamage(int count, float amount) {
-        return count + (int)(ForgeConfigHandler.client.extraParticlesPerHeartOfDamage * amount);
+    public static int ScaleCountByDamage(int count, float extra, float amount) {
+        return count + (int)(extra * amount);
     }
 
     public static Vec3d[] GetAxisAlignedQuad(EnumFacing dir, double width) {

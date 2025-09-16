@@ -1,6 +1,6 @@
 package com.beckadam.ballisticblood;
 
-import com.beckadam.ballisticblood.handlers.AttackEntityFromHandler;
+import com.beckadam.ballisticblood.handlers.LivingDamageEventHandler;
 import com.beckadam.ballisticblood.handlers.BallisticBloodCommandHandler;
 import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
 import com.beckadam.ballisticblood.particles.ParticleTypeManager;
@@ -32,7 +32,7 @@ public class BallisticBloodMod {
 	
 	@Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
-        AttackEntityFromHandler.register(MinecraftForge.EVENT_BUS);
+        LivingDamageEventHandler.register(MinecraftForge.EVENT_BUS);
 //        if (event.getSide() == Side.CLIENT) {
 //            RenderWorldLastEventHandler.register(MinecraftForge.EVENT_BUS);
 //        }

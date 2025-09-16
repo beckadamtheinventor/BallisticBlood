@@ -68,9 +68,12 @@ public class ClientHelper {
         double spreadVariance = ForgeConfigHandler.client.particleSpreadVariance;
         int projectileCount = Math.min(
                 ForgeConfigHandler.client.particleSpreadMax,
-                CommonHelper.ScaleCountByDamage(ForgeConfigHandler.client.particleSpreadCount, damage)
+                CommonHelper.ScaleCountByDamage(ForgeConfigHandler.client.particleSpreadCount, ForgeConfigHandler.client.sprayParticlePerHeart, damage)
         );
-        int sprayCount = ForgeConfigHandler.client.sprayParticleCount;
+        int sprayCount = Math.min(
+                ForgeConfigHandler.client.sprayParticleMax,
+                CommonHelper.ScaleCountByDamage(ForgeConfigHandler.client.sprayParticleCount, ForgeConfigHandler.client.sprayParticlePerHeart, damage)
+        );
         GlStateManager.SourceFactor srcFactor = BlendModeHelper.getSourceFactor(cfg.blendMode[0]);
         GlStateManager.DestFactor destFactor = BlendModeHelper.getDestFactor(cfg.blendMode[1]);
         int blendOp = BlendModeHelper.getBlendFunction(cfg.blendOp);

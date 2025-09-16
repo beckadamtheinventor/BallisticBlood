@@ -114,8 +114,10 @@ public class SplatterParticleBase extends Particle {
                 this.particleTextureIndexY = rand.nextInt(5); // rows 0, 1, 2, 3, 4
                 break;
             case PROJECTILE:
+                this.particleTextureIndexY = rand.nextInt(2) + 5; // rows 5 and 6
+                break;
             case SPRAY:
-                this.particleTextureIndexY = rand.nextInt(3) + 5; // rows 5, 6, 7
+                this.particleTextureIndexY = 7;
                 break;
             case IMPACT:
             case BASE:
@@ -133,8 +135,13 @@ public class SplatterParticleBase extends Particle {
     public Vec3d getPositionVector() {
         return new Vec3d(posX, posY, posZ);
     }
+
     public Vec3d getDirectionVector() {
         return new Vec3d(motionX, motionY, motionZ);
+    }
+
+    public void setPositionVector(Vec3d v) {
+        posX = v.x; posY = v.y; posZ = v.z;
     }
 
 
@@ -184,15 +191,18 @@ public class SplatterParticleBase extends Particle {
         float v0 = (float)this.particleTextureIndexY / particleTextureHeight;
         float u1 = u0 + 1.0f / particleTextureWidth;
         float v1 = v0 + 1.0f / particleTextureHeight;
+        int j = 0;
         if (this.hFlip) {
-            float t = u0;
-            u0 = u1;
-            u1 = t;
+//            float t = u0;
+//            u0 = u1;
+//            u1 = t;
+            j ^= 1;
         }
         if (this.vFlip) {
-            float t = v0;
-            v0 = v1;
-            v1 = t;
+//            float t = v0;
+//            v0 = v1;
+//            v1 = t;
+            j ^= 2;
         }
 //        if (this.rotate) {
 //            float t = u0;
@@ -205,23 +215,24 @@ public class SplatterParticleBase extends Particle {
 //        GlStateManager.disableLighting();
 
 //        GL11.glPushMatrix();
+
         buffer.pos(px + quad[0].x, py + quad[0].y, pz + quad[0].z)
-                .tex(finalUVOffsets[0].x+u1, finalUVOffsets[0].y+v1)
+                .tex(finalUVOffsets[j].x+u1, finalUVOffsets[j].y+v1)
                 .color(colorMultiplier, colorMultiplier, colorMultiplier, alpha)
                 .lightmap(lx, ly)
                 .endVertex();
         buffer.pos(px + quad[1].x, py + quad[1].y, pz + quad[1].z)
-                .tex(finalUVOffsets[1].x+u1, finalUVOffsets[1].y+v0)
+                .tex(finalUVOffsets[j^1].x+u1, finalUVOffsets[j^1].y+v0)
                 .color(colorMultiplier, colorMultiplier, colorMultiplier, alpha)
                 .lightmap(lx, ly)
                 .endVertex();
         buffer.pos(px + quad[2].x, py + quad[2].y, pz + quad[2].z)
-                .tex(finalUVOffsets[2].x+u0, finalUVOffsets[2].y+v0)
+                .tex(finalUVOffsets[j^2].x+u0, finalUVOffsets[j^2].y+v0)
                 .color(colorMultiplier, colorMultiplier, colorMultiplier, alpha)
                 .lightmap(lx, ly)
                 .endVertex();
         buffer.pos(px + quad[3].x, py + quad[3].y, pz + quad[3].z)
-                .tex(finalUVOffsets[3].x+u0, finalUVOffsets[3].y+v1)
+                .tex(finalUVOffsets[j^3].x+u0, finalUVOffsets[j^3].y+v1)
                 .color(colorMultiplier, colorMultiplier, colorMultiplier, alpha)
                 .lightmap(lx, ly)
                 .endVertex();
@@ -261,21 +272,13 @@ public class SplatterParticleBase extends Particle {
             // recompute vertex overhang if necessary
             this.computeVertexOverhang();
             if (this.onGround && this.checkIsHovering()) {
-                if (ForgeConfigHandler.client.particlePopOffMultiplier > 0) {
-                    // "pop off"
-                    Vec3d randomVector = CommonHelper.GetRandomNormalizedVector()
-                            .add(this.hitNormal).scale(ForgeConfigHandler.client.particlePopOffMultiplier);
-                    this.motionX += randomVector.x;
-                    this.motionY += randomVector.y;
-                    this.motionZ += randomVector.z;
-                    this.posX += this.motionX;
-                    this.posY += this.motionY;
-                    this.posZ += this.motionZ;
-                    this.onGround = false;
-                } else {
+                this.finalQuad = CommonHelper.GetAxisAlignedQuad(facing, this.width * this.decalScale);
+                this.setPositionVector(getQuadFaceMiddle(this.getPositionVector(), hitNormal));
+                this.finalUVOffsets = new Vec2f[] {Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO, Vec2f.ZERO};
+                if (this.checkIsHovering()) {
                     this.setExpired();
-                    return;
                 }
+                return;
             }
         }
         if (!onGround) {
@@ -309,6 +312,14 @@ public class SplatterParticleBase extends Particle {
             }
         }
         return hovering > ForgeConfigHandler.client.floatingVertexFallThreshold;
+    }
+
+    public static Vec3d getQuadFaceMiddle(Vec3d p, Vec3d n) {
+        return new Vec3d(
+                n.x<0 ? Math.ceil(p.x) : (n.x>0 ? Math.floor(p.x) : 0),
+                n.y<0 ? Math.ceil(p.y) : (n.y>0 ? Math.floor(p.y) : 0),
+                n.z<0 ? Math.ceil(p.z) : (n.z>0 ? Math.floor(p.z) : 0)
+        );
     }
 
     public boolean checkIsCovered() {
@@ -446,6 +457,10 @@ public class SplatterParticleBase extends Particle {
         if (!ForgeConfigHandler.client.enableExperimentalOverhangClipping) {
             return;
         }
+        // only run this every 4 client ticks
+        if ((this.particleAge & 3) != 0) {
+            return;
+        }
 
         double w = this.width*this.decalScale*0.5+2.5;
         List<AxisAlignedBB> worldCollisionBoxes =
@@ -511,15 +526,15 @@ public class SplatterParticleBase extends Particle {
                     // offset the vertex to align it with the bounding box
                     finalQuad[i] = perAxisTernary(boxVec, finalQuad[i], hitNormal);
                     // check if vertex is now anchored after being moved
-                    v = finalQuad[i].scale(0.99).add(getPositionVector()).subtract(hitNormal.scale(SMALL_AMOUNT));
-                    for (AxisAlignedBB box : worldCollisionBoxes) {
-                        if (box.contains(v)) {
-                            anchored = true;
-                        }
-                    }
-                    if (!anchored) {
-                        this.setExpired();;
-                    }
+//                    v = finalQuad[i].scale(0.99).add(getPositionVector()).subtract(hitNormal.scale(SMALL_AMOUNT));
+//                    for (AxisAlignedBB box : worldCollisionBoxes) {
+//                        if (box.contains(v)) {
+//                            anchored = true;
+//                        }
+//                    }
+//                    if (!anchored) {
+//                        this.setExpired();;
+//                    }
                 }
             }
         }
@@ -529,15 +544,18 @@ public class SplatterParticleBase extends Particle {
         }
         Vec3d[] orig = CommonHelper.GetAxisAlignedQuad(facing, this.width * this.decalScale);
         for (int i = 0; i < finalUVOffsets.length; i++) {
-            Vec3d ud = finalQuad[i].subtract(orig[i]).scale(1.0f / (decalScale * width * particleTextureWidth));
+            Vec3d ud = finalQuad[i].subtract(orig[i]).scale(1.0f / (this.width * this.decalScale * particleTextureWidth));
+            int j = i;
+            if (hFlip) { j = hFlipVertexIndex[j]; }
+            if (vFlip) { j = vFlipVertexIndex[j]; }
             if (hitNormal.x == 0) {
                 if (hitNormal.y == 0) {
-                    finalUVOffsets[i] = new Vec2f((float)ud.x, (float)ud.y);
+                    finalUVOffsets[j] = new Vec2f((float)ud.x, (float)ud.y);
                 } else if (hitNormal.z == 0) {
-                    finalUVOffsets[i] = new Vec2f((float)ud.x, (float)ud.z);
+                    finalUVOffsets[j] = new Vec2f((float)ud.x, (float)ud.z);
                 }
             } else if (hitNormal.y == 0) {
-                finalUVOffsets[i] = new Vec2f((float)ud.z, (float)ud.y);
+                finalUVOffsets[j] = new Vec2f((float)ud.z, (float)ud.y);
             }
         }
     }
