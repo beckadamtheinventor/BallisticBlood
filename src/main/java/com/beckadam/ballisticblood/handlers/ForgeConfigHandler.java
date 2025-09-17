@@ -1,9 +1,5 @@
 package com.beckadam.ballisticblood.handlers;
 
-
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import net.minecraft.util.JsonUtils;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
@@ -65,13 +61,12 @@ public class ForgeConfigHandler {
                 "{\"name\":\"DUST\",\"texture\":\"ballisticblood:textures/particle/dust_particle.png\",\"size\":1," +
                         "\"gravity\":0.1,\"velocity\":0.4,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false," +
                         "\"tiling\":\"8,1\"}",
-                "{\"name\":\"ASH\",\"texture\":\"ballisticblood:textures/particle/ash_particle.png\",\"size\":1," +
-                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false." +
-                        "\"tiling\":\"8,1\"}",
+                "{\"name\":\"ASH\",\"texture\":\"ballisticblood:textures/particle/dust_particle.png\",\"size\":1," +
+                        "\"gravity\":0.1,\"velocity\":0.4,\"spray_velocity\":0.02,\"blend\":\"NORMAL\",\"lighting\":false," +
+                        "\"tiling\":\"8,1\",\"color\":[0.1,0.1,0.1]}",
                 "{\"name\":\"SLIME\",\"texture\":\"ballisticblood:textures/particle/slime_particle.png\",\"size\":0.8," +
                         "\"gravity\":2,\"velocity\":1.2,\"spray_velocity\":0.3," +
-                        "\"blend\":\"ONE ONE_MINUS_SRC_ALPHA\",\"blend_op\":\"MAX\",\"lighting\":false," +
-                        "\"color_multiplier\":2.0}",
+                        "\"blend\":\"ONE ONE_MINUS_SRC_ALPHA\",\"lighting\":false}",
                 "{\"name\":\"ENDER\",\"texture\":\"ballisticblood:textures/particle/ender_particle.png\",\"size\":1," +
                         "\"gravity\":1,\"velocity\":1,\"spray_velocity\":0.25," +
                         "\"blend\":\"NORMAL\"}",
@@ -95,7 +90,7 @@ public class ForgeConfigHandler {
 
         @Config.Comment("(advanced) set the surface offset multiplier for decal particles landed on surfaces")
         @Config.Name("Decal surface offset mutliplier")
-        public float decalSurfaceOffsetMultiplier = 0.01f;
+        public float decalSurfaceOffsetMultiplier = 0.001f;
 
         @Config.Comment("Measured in ticks. There are 20 ticks in a second.\nThis is the lifetime of the initial hit particle emitter.\nMake sure this is greater than or equal to the other lifetimes.")
         @Config.Name("Lifetime of splatter particles in ticks")
@@ -108,7 +103,7 @@ public class ForgeConfigHandler {
         @Config.Ignore
         public double particleRenderDistanceCubed = 1.0;
 
-        @Config.Name("Radius of splatter spread in quarter-circles")
+        @Config.Name("Radius of projectile spread in quarter-circles")
         public float particleSpreadSize = 1.0f;
 
         @Config.Comment("Measured in blocks per second. 9.81 is Earth gravity. Multiplied by other values to get final value.")
@@ -120,7 +115,7 @@ public class ForgeConfigHandler {
         public float particleSize = 0.5f;
 
         @Config.Comment("Maximum multiplier to randomly offset projectile particle direction")
-        @Config.Name("Particle spread variance")
+        @Config.Name("Projectile spread variance")
         public float particleSpreadVariance = 1.0f;
 
         @Config.Comment("Size of particles when they hit a wall. Multiplied by other values to get final value.")
@@ -155,6 +150,14 @@ public class ForgeConfigHandler {
         @Config.Name("Spray particle gravity")
         public float sprayParticleGravity = 0.0f;
 
+        @Config.Comment("If this is false, no splatter particles will be rendered!")
+        @Config.Name("Enable splatter particles")
+        public boolean enableSplatterParticles = true;
+
+        @Config.Comment("Projectile particles emitted is this number plus the damage times the particles per heart.\nNote that this value can be negative to increase the minimum damage required to cause projectile particles.")
+        @Config.Name("Additional projectile particles to spawn per heart of damage")
+        public float projectileParticlesPerHeart = 1.0f;
+
         @Config.Comment("Multiplied by other values to get final value.")
         @Config.Name("Spray particle size")
         public float sprayParticleSize = 1.0f;
@@ -167,21 +170,25 @@ public class ForgeConfigHandler {
         @Config.Name("Spray particle fade start in ticks")
         public int sprayParticleFadeStart = 40;
 
-        @Config.Comment("If this is false, no splatter particles will be rendered!")
-        @Config.Name("Enable splatter particles")
-        public boolean enableSplatterParticles = true;
+        @Config.Comment("Base number of projectile particles to emit from the hit position")
+        @Config.Name("Base number of projectile particles to spawn per hit")
+        public float projectileParticleBase = 1.0f;
 
-        @Config.Comment("Projectile particles emitted is this number plus the damage times the particles per heart.\nNote that this value can be negative to increase the minimum damage required to cause splatter particles.")
-        @Config.Name("Number of projectile particles to emit for each hit")
-        public int particleSpreadCount = -1;
+        @Config.Comment("Maximum number of projectile particles to spawn per hit")
+        @Config.Name("Maximum projectile particles per hit")
+        public int projectileParticleMax = 24;
 
-        @Config.Comment("Absolute maximum number of projectile particles to spawn per hit")
-        @Config.Name("Maximum projectile particles per splatter")
-        public int particleSpreadMax = 24;
+        @Config.Comment("Minimum number of projectile particles to spawn per hit")
+        @Config.Name("Minimum projectile particles per hit")
+        public int projectileParticleMin = 1;
+
+        @Config.Comment("Minimum number of hearts to spawn projectile particles")
+        @Config.Name("Minimum damage required to spawn projectile particles")
+        public float projectileParticleMinDamage = 2.0f;
 
         @Config.Comment("Base number of spray particles to emit from the hit position")
         @Config.Name("Base number of spray particles to spawn per hit")
-        public int sprayParticleCount = 10;
+        public float sprayParticleBase = 10.0f;
 
         @Config.Comment("Additional spray particles to emit from the hit position")
         @Config.Name("Additional spray particles to spawn per heart of damage")
@@ -191,9 +198,13 @@ public class ForgeConfigHandler {
         @Config.Name("Maximum number of spray particles to spawn per hit")
         public int sprayParticleMax = 10;
 
-        @Config.Comment("Projectile particles emitted is the spread count plus the damage times this value")
-        @Config.Name("Extra projectile particles per heart of damage")
-        public float extraParticlesPerHeartOfDamage = 1.0f;
+        @Config.Comment("Minimum spray particles to emit from the hit position")
+        @Config.Name("Minimum number of spray particles to spawn per hit")
+        public int sprayParticleMin = 10;
+
+        @Config.Comment("Spray particles emitted is the spread count plus the damage times this value")
+        @Config.Name("Minimum damage required to spawn spray particles")
+        public float sprayParticleMinDamage = 2.0f;
     }
 
 	@Mod.EventBusSubscriber(modid = BallisticBloodMod.MODID)
@@ -206,104 +217,6 @@ public class ForgeConfigHandler {
 			}
 		}
 	}
-
-    public static class ParticleConfig {
-        public final int type;
-        public final String typeName;
-        public final float velocity;
-        public final float sprayVelocity;
-        public final float gravity;
-        public final float size;
-        public final ResourceLocation texture;
-        public final String[] blendMode;
-        public final boolean lighting;
-        public final String blendOp;
-        public final float colorMultiplier;
-        public final float alphaMultiplier;
-        public final int[] tiling;
-
-        public ParticleConfig(String config) throws RuntimeException {
-            JsonObject json = new JsonParser().parse(config).getAsJsonObject();
-            if (!JsonUtils.hasField(json, "name")) {
-                throw new RuntimeException("missing name in particle config!");
-            }
-            if (!JsonUtils.hasField(json, "texture")) {
-                throw new RuntimeException("missing texture in particle config!");
-            }
-            typeName = JsonUtils.getString(json, "name");
-            String tex = JsonUtils.getString(json, "texture");
-            if (!tex.contains(":")) {
-                throw new RuntimeException("missing mod id in texture resource location!");
-            }
-            texture = new ResourceLocation(tex);
-            if (JsonUtils.hasField(json, "size")) {
-                size = JsonUtils.getFloat(json, "size");
-            } else {
-                size = 1.0f;
-            }
-            if (JsonUtils.hasField(json, "velocity")) {
-                velocity = JsonUtils.getFloat(json, "velocity");
-            } else {
-                velocity = 1.0f;
-            }
-            if (JsonUtils.hasField(json, "gravity")) {
-                gravity = JsonUtils.getFloat(json, "gravity");
-            } else {
-                gravity = 1.0f;
-            }
-            if (JsonUtils.hasField(json, "spray_velocity")) {
-                sprayVelocity = JsonUtils.getFloat(json, "spray_velocity");
-            } else {
-                sprayVelocity = 1.0f;
-            }
-            tiling = new int[] {8, 8};
-            if (JsonUtils.hasField(json, "tiling")) {
-                String[] t = JsonUtils.getString(json, "tiling").split(",");
-                if (t.length >= 1) {
-                    tiling[0] = Integer.parseInt(t[0]);
-                    if (t.length >= 2) {
-                        tiling[1] = Integer.parseInt(t[1]);
-                    } else {
-                        tiling[1] = tiling[0];
-                    }
-                }
-            }
-            blendMode = new String[2];
-            blendMode[0] = blendMode[1] = "NORMAL";
-            if (JsonUtils.hasField(json, "blend")) {
-                String[] mode = JsonUtils.getString(json, "blend").split(" ");
-                if (mode.length == 1) {
-                    blendMode[0] = blendMode[1] = mode[0];
-                } else if (mode.length >= 2) {
-                    blendMode[0] = mode[0];
-                    blendMode[1] = mode[1];
-                }
-            } else {
-                blendMode[0] = blendMode[1] = "NORMAL";
-            }
-            if (JsonUtils.hasField(json, "blend_op")) {
-                blendOp = JsonUtils.getString(json, "blend_op");
-            } else {
-                blendOp = "ADD";
-            }
-            if (JsonUtils.hasField(json, "lighting")) {
-                lighting = JsonUtils.getBoolean(json, "lighting");
-            } else {
-                lighting = true;
-            }
-            if (JsonUtils.hasField(json, "color_multiplier")) {
-                colorMultiplier = JsonUtils.getFloat(json, "color_multiplier");
-            } else {
-                colorMultiplier = 1.0f;
-            }
-            if (JsonUtils.hasField(json, "alpha_multiplier")) {
-                alphaMultiplier = JsonUtils.getFloat(json, "alpha_multiplier");
-            } else {
-                alphaMultiplier = 1.0f;
-            }
-            type = BallisticBloodMod.particleTypes.add(typeName);
-        }
-    }
 
     public static void ParseConfig() {
         if (particleConfigMap == null) {
@@ -318,16 +231,20 @@ public class ForgeConfigHandler {
         }
         client.particleRenderDistanceCubed = client.particleRenderDistance*client.particleRenderDistance*client.particleRenderDistance;
         BallisticBloodMod.particleTypes.init();
+        StringBuilder loaded_types = new StringBuilder();
         for (String s : server.particleConfig) {
             try {
                 ParticleConfig conf = new ParticleConfig(s);
                 particleConfigMap.put(conf.typeName, conf);
                 particleConfigIntMap.put(conf.type, conf);
                 BallisticBloodMod.LOGGER.log(Level.INFO, s);
+                loaded_types.append(conf.typeName).append(", ");
             } catch (Exception err) {
                 BallisticBloodMod.LOGGER.log(Level.ERROR, "Failed to parse particle type config: \"" + s + "\"");
             }
         }
+        loaded_types.delete(loaded_types.length()-2, loaded_types.length());
+        BallisticBloodMod.LOGGER.log(Level.INFO, "types: " + loaded_types);
         if (server.entitySplatterTypeMap == null) {
             server.entitySplatterTypeMap = new HashMap<>();
         } else {
@@ -335,7 +252,7 @@ public class ForgeConfigHandler {
         }
         for (String s : server.entitySplatterTypes) {
             String[] a = s.split("=", 2);
-            if (a.length == 2) {
+            if (a.length == 2 && a[0] != null && a[1] != null) {
                 int num = BallisticBloodMod.particleTypes.get(a[1]);
                 server.entitySplatterTypeMap.put(new ResourceLocation(a[0]), num);
                 BallisticBloodMod.LOGGER.log(Level.INFO, a[0] + " = " + a[1]);

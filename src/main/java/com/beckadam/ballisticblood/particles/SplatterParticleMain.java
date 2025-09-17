@@ -2,6 +2,8 @@ package com.beckadam.ballisticblood.particles;
 
 import com.beckadam.ballisticblood.BallisticBloodMod;
 import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
+import com.beckadam.ballisticblood.handlers.ParticleConfig;
+import com.beckadam.ballisticblood.helpers.BlendModeHelper;
 import com.beckadam.ballisticblood.helpers.ClientHelper;
 import com.beckadam.ballisticblood.helpers.CommonHelper;
 import com.google.common.collect.Queues;
@@ -30,7 +32,7 @@ public class SplatterParticleMain extends SplatterParticleBase {
 
     @Override
     public void renderParticle(BufferBuilder buffer, Entity entityIn, float partialTicks, float rotationX, float rotationZ, float rotationYZ, float rotationXY, float rotationXZ) {
-        if (!(this.sprayParticles.isEmpty() && this.projectileParticles.isEmpty())) {
+        if (!(sprayParticles.isEmpty() && projectileParticles.isEmpty())) {
             ipx = (float)(entityIn.prevPosX + (entityIn.posX - entityIn.prevPosX) * partialTicks);
             ipy = (float)(entityIn.prevPosY + (entityIn.posY - entityIn.prevPosY) * partialTicks);
             ipz = (float)(entityIn.prevPosZ + (entityIn.posZ - entityIn.prevPosZ) * partialTicks);
@@ -38,22 +40,18 @@ public class SplatterParticleMain extends SplatterParticleBase {
             GlStateManager.disableNormalize();
             GlStateManager.colorMaterial(GL11.GL_FRONT_AND_BACK, GL11.GL_DIFFUSE);
             GlStateManager.enableColorMaterial();
-            GlStateManager.glBlendEquation(this.blendOp);
-            GlStateManager.blendFunc(this.blendSourceFactor, this.blendDestFactor);
+            GlStateManager.glBlendEquation(blendOp);
+            GlStateManager.blendFunc(sourceFactor, destFactor);
             GlStateManager.enableBlend();
-            if (lightingEnabled) {
-                GlStateManager.enableLighting();
-            } else {
-                GlStateManager.disableLighting();
-            }
-            Minecraft.getMinecraft().getTextureManager().bindTexture(splatterParticleTexture);
+            GlStateManager.disableLighting();
+            Minecraft.getMinecraft().getTextureManager().bindTexture(cfg.texture);
             buffer.begin(7, DefaultVertexFormats.PARTICLE_POSITION_TEX_COLOR_LMAP);
-            // render the spray particles
-            for (SplatterParticleSpray sub : this.sprayParticles) {
+            // render the projectile particles
+            for (SplatterParticleProjectile sub : projectileParticles) {
                 sub.renderParticle(buffer, entityIn, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
             }
-            // render the projectile particles
-            for (SplatterParticleProjectile sub : this.projectileParticles) {
+            // render the spray particles
+            for (SplatterParticleSpray sub : sprayParticles) {
                 sub.renderParticle(buffer, entityIn, partialTicks, rotationX, rotationZ, rotationYZ, rotationXY, rotationXZ);
             }
             Tessellator.getInstance().draw();
@@ -65,6 +63,14 @@ public class SplatterParticleMain extends SplatterParticleBase {
             GlStateManager.depthMask(true);
         }
     }
+
+    @Override
+    public void setConfig(ParticleConfig config, float gravity, float size) {
+        super.setConfig(config, gravity, size);
+        blendOp = BlendModeHelper.getBlendFunction(cfg.blendOp);
+        sourceFactor = BlendModeHelper.getSourceFactor(cfg.blendMode[0]);
+        destFactor = BlendModeHelper.getDestFactor(cfg.blendMode[1]);
+   }
 
     public void addParticle(SplatterParticleSpray particle) {
         if (particle != null) {
@@ -81,8 +87,8 @@ public class SplatterParticleMain extends SplatterParticleBase {
     @Override
     public void onUpdate() {
         super.onUpdate();
-//        if ((this.particleAge & 7) == 0) {
-//            BallisticBloodMod.LOGGER.log(Level.INFO, "SrcFactor: " + this.blendSourceFactor + " DestFactor: " + this.blendDestFactor);
+//        if ((particleAge & 7) == 0) {
+//            BallisticBloodMod.LOGGER.log(Level.INFO, "SrcFactor: " + blendSourceFactor + " DestFactor: " + blendDestFactor);
 //        }
         if (!sprayParticles.isEmpty()) {
             Iterator<SplatterParticleSpray> iterator = sprayParticles.iterator();

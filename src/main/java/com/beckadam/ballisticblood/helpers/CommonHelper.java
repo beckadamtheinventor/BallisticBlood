@@ -77,8 +77,8 @@ public class CommonHelper {
         }
     }
 
-    public static int ScaleCountByDamage(int count, float extra, float amount) {
-        return count + (int)(extra * amount);
+    public static int ScaleCountByDamage(float count, float extra, float amount) {
+        return (int)(count + extra * amount);
     }
 
     public static Vec3d[] GetAxisAlignedQuad(EnumFacing dir, double width) {

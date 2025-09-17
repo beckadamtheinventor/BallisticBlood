@@ -1,6 +1,7 @@
 package com.beckadam.ballisticblood.proxy;
 
 import com.beckadam.ballisticblood.handlers.ForgeConfigHandler;
+import com.beckadam.ballisticblood.handlers.ParticleConfig;
 import com.beckadam.ballisticblood.helpers.CommonHelper;
 import com.beckadam.ballisticblood.helpers.ClientHelper;
 import net.minecraft.client.Minecraft;
@@ -19,7 +20,7 @@ public class ClientProxy extends CommonProxy {
     @Override
     public void LoadTextures() {
         TextureManager tm = Minecraft.getMinecraft().getTextureManager();
-        for (ForgeConfigHandler.ParticleConfig cfg : ForgeConfigHandler.particleConfigIntMap.values()) {
+        for (ParticleConfig cfg : ForgeConfigHandler.particleConfigIntMap.values()) {
             if (tm.getTexture(cfg.texture) == null) {
                 tm.loadTexture(cfg.texture, new SimpleTexture(cfg.texture));
             }
