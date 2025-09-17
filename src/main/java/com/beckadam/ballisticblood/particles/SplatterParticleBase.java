@@ -3,12 +3,14 @@ package com.beckadam.ballisticblood.particles;
 import com.beckadam.ballisticblood.BallisticBloodMod;
 import com.beckadam.ballisticblood.handlers.ParticleConfig;
 import com.beckadam.ballisticblood.helpers.CommonHelper;
+import net.minecraft.block.BlockSnow;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.particle.Particle;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.Entity;
+import net.minecraft.init.Blocks;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.*;
 import net.minecraft.world.World;
@@ -35,8 +37,9 @@ public class SplatterParticleBase extends Particle {
     protected int blendOp;
     protected boolean canDecal;
 
+    protected double zFighter;
     protected Vec3d hitNormal;
-    protected Vec3d hitOffset;
+    protected Vec3d drawOffset;
     protected Vec3d[] finalQuad;
     protected Vec2f[] finalUVOffsets;
     protected EnumFacing facing;
@@ -150,12 +153,12 @@ public class SplatterParticleBase extends Particle {
         int ly = i & 65535;
 
         Vec3d[] quad;
-        if (hitOffset == null) {
-            hitOffset = Vec3d.ZERO;
+        if (drawOffset == null) {
+            drawOffset = Vec3d.ZERO;
         }
-        double px = (prevPosX + (posX - prevPosX) * partialTicks - ipx) + hitOffset.x;
-        double py = (prevPosY + (posY - prevPosY) * partialTicks - ipy) + hitOffset.y;
-        double pz = (prevPosZ + (posZ - prevPosZ) * partialTicks - ipz) + hitOffset.z;
+        double px = (prevPosX + (posX - prevPosX) * partialTicks - ipx) + drawOffset.x;
+        double py = (prevPosY + (posY - prevPosY) * partialTicks - ipy) + drawOffset.y;
+        double pz = (prevPosZ + (posZ - prevPosZ) * partialTicks - ipz) + drawOffset.z;
         float w = particleScale * width;
         if (onGround && finalQuad != null) {
             quad = finalQuad;
@@ -224,6 +227,15 @@ public class SplatterParticleBase extends Particle {
         prevPosY = posY;
         prevPosZ = posZ;
         if (canCollide && canDecal) {
+            // check for snow layer
+            if (facing == EnumFacing.UP && hitNormal != null) {
+                BlockPos pos = new BlockPos(getPositionVector());
+                final IBlockState block = world.getBlockState(pos);
+                if (block.getBlock() == Blocks.SNOW_LAYER) {
+                    int layer = block.getValue(BlockSnow.LAYERS);
+                    drawOffset = new Vec3d(0.0, zFighter + layer / 8.0, 0.0);
+                }
+            }
             // recompute vertex overhang if necessary
             computeVertexOverhang();
             if (onGround && checkIsHovering()) {
@@ -575,22 +587,22 @@ public class SplatterParticleBase extends Particle {
         if (canDecal && !onGround) {
             if (origX != dx || origY != dy || origZ != dz) {
                 BlockPos pos = new BlockPos(posX, posY, posZ);
-                float quadOffset = ForgeConfigHandler.client.decalSurfaceOffsetMultiplier * (1.0f + rand.nextFloat());
+                zFighter = ForgeConfigHandler.client.decalSurfaceOffsetMultiplier * (1.0f + rand.nextFloat());
                 if (dx != origX) {
                     facing = (origX > 0 ? EnumFacing.WEST : EnumFacing.EAST);
                     hitNormal = new Vec3d(-Math.signum(origX), 0.0, 0.0);
                     posX = pos.getX() + (origX > 0 ? 1 : 0);
-                    quadOffset = (float)(quadOffset*Math.signum(origX) - 0.75*SMALL_AMOUNT);
+                    zFighter = (float)(zFighter*Math.signum(origX) - 0.75*SMALL_AMOUNT);
                 } else if (dz != origZ) {
                     facing = (origZ > 0 ? EnumFacing.NORTH : EnumFacing.SOUTH);
                     hitNormal = new Vec3d(0.0, 0.0, -Math.signum(origZ));
                     posZ = pos.getZ() + (origZ > 0 ? 1 : 0);
-                    quadOffset = (float) (quadOffset * Math.signum(origZ) - 0.75*SMALL_AMOUNT);
+                    zFighter = (float) (zFighter * Math.signum(origZ) - 0.75*SMALL_AMOUNT);
                 } else if (origY != dy) {
                     facing = (origY > 0 ? EnumFacing.DOWN : EnumFacing.UP);
                     hitNormal = new Vec3d(0.0, -Math.signum(origY), 0.0);
                     posY = pos.getY() + (origY > 0 ? 1 : 0);
-                    quadOffset = -(float)(quadOffset*Math.signum(origY));
+                    zFighter = -(float)(zFighter*Math.signum(origY));
                 } else {
                     return;
                 }
@@ -601,7 +613,7 @@ public class SplatterParticleBase extends Particle {
                     // particle just hit the ground, fix it in position,
                     // generate decal quad that is separate from the bounding box
                     finalQuad = CommonHelper.GetAxisAlignedQuad(facing, width * ForgeConfigHandler.client.decalScale);
-                    hitOffset = hitNormal.scale(quadOffset);
+                    drawOffset = hitNormal.scale(zFighter);
 
                     onGround = true;
                     oldDisplayType = displayType;
